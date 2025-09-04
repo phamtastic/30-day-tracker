@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>30-Day Challenge Tracker</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            background-color: #F3F4F6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 350px;
+        }
+        .task-item:hover {
+            background-color: #E5E7EB;
+        }
+        .task-item.completed {
+            background-color: #D1D5DB;
+            text-decoration: line-through;
+            color: #4B5563;
+        }
+        .day-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .day-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+        .day-card-completed {
+            background-color: #E0E7FF;
+            border-color: #A5B4FC;
+        }
+        #promptModal, #confirmModal {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let userProgress = JSON.parse(localStorage.getItem('challengeProgress')) || {};
+            const daysContainer = document.getElementById('daysContainer');
+            const totalTasksEl = document.getElementById('totalTasks');
+            const completedTasksEl = document.getElementById('completedTasks');
+            const completionChartEl = document.getElementById('completionChart');
+            const progressChartEl = document.getElementById('progressChart');
+            const modalEl = document.getElementById('promptModal');
+            const modalCloseEl = document.getElementById('modalClose');
+            const modalTextEl = document.getElementById('modalText');
+            const overlayEl = document.getElementById('overlay');
+            const resetButtonEl = document.getElementById('resetButton');
+            const confirmModalEl = document.getElementById('confirmModal');
+            const confirmModalYesEl = document.getElementById('confirmModalYes');
+            const confirmModalNoEl = document.getElementById('confirmModalNo');
+            const confirmModalMessageEl = document.getElementById('confirmModalMessage');
+            let completionChart, progressChart;
+            function getChallengeData() {
+                return {
+                    dayCount: 30,
+                    tasksPerDay: [
+                        { id: 'strength', label: 'Strength Workout' },
+                        { id: 'cardio', label: 'Cardio or walk' },
+                        { id: 'read', label: 'Read or Coursera' },
+                        { id: 'journal', label: 'Journal' }
+                    ]
+                };
+            }
+            const challengeData = getChallengeData();
+            function initTracker() {
+                for (let i = 1; i <= challengeData.dayCount; i++) {
+                    if (!userProgress[i]) {
+                        userProgress[i] = {
+                            completed: false,
+                            tasks: {}
+                        };
+                        challengeData.tasksPerDay.forEach(task => {
+                            userProgress[i].tasks[task.id] = { status: false, notes: '' };
+                        });
+                    }
+                }
+                saveProgress();
+                renderCards();
+                updateDashboard();
+            }
+            function saveProgress() {
+                localStorage.setItem('challengeProgress', JSON.stringify(userProgress));
+            }
+            function renderCards() {
+                if (!daysContainer) return;
+                daysContainer.innerHTML = '';
+                for (let i = 1; i <= challengeData.dayCount; i++) {
+                    const dayData = userProgress[i];
+                    const allTasksCompleted = challengeData.tasksPerDay.every(task => dayData.tasks[task.id].status);
+                    const cardClass = allTasksCompleted ? 'day-card-completed' : '';
+                    const dayCard = document.createElement('div');
+                    dayCard.className = `day-card bg-white p-6 rounded-lg shadow-md flex flex-col justify-between ${cardClass}`;
+                    dayCard.innerHTML = `
+                        <div>
+                            <h3 class="text-2xl font-bold text-[#364156] mb-4">Day ${i}</h3>
+                            <div class="space-y-2">
+                                ${challengeData.tasksPerDay.map(task => `
+                                    <div class="task-item flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${dayData.tasks[task.id].status ? 'completed' : ''}" data-day="${i}" data-task="${task.id}">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm font-semibold text-[#364156]">${task.label}</span>
+                                        </div>
+                                        <div class="w-4 h-4 rounded-full border-2 border-[#7284A3] flex items-center justify-center text-white text-xs">
+                                            ${dayData.tasks[task.id].status ? '✓' : ''}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                    daysContainer.appendChild(dayCard);
+                }
+            }
+            function updateDashboard() {
+                let completedDays = 0;
+                let completedTasksCount = 0;
+                let totalTasksCount = 0;
+                for (let i = 1; i <= challengeData.dayCount; i++) {
+                    totalTasksCount += challengeData.tasksPerDay.length;
+                    const dayData = userProgress[i];
+                    const dayTasks = Object.values(dayData.tasks);
+                    if (dayTasks.every(task => task.status)) {
+                        completedDays++;
+                    }
+                    completedTasksCount += dayTasks.filter(task => task.status).length;
+                }
+                if (totalTasksEl) totalTasksEl.textContent = `${challengeData.dayCount} days`;
+                if (completedTasksEl) completedTasksEl.textContent = `${completedDays} days`;
+                const completionPercentage = (completedTasksCount / totalTasksCount) * 100 || 0;
+                updateCompletionChart(completionPercentage);
+                updateProgressChart();
+            }
+            function updateCompletionChart(percentage) {
+                const ctx = completionChartEl.getContext('2d');
+                if (completionChart) {
+                    completionChart.data.datasets[0].data = [percentage, 100 - percentage];
+                    completionChart.update();
+                } else {
+                    completionChart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            datasets: [{
+                                data: [percentage, 100 - percentage],
+                                backgroundColor: ['#364156', '#D1D5DB'],
+                                borderWidth: 0,
+                                hoverOffset: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: '80%',
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { enabled: false },
+                                customCanvas: {
+                                    text: `${Math.round(percentage)}%`
+                                }
+                            }
+                        },
+                        plugins: [{
+                            id: 'customCanvas',
+                            beforeDraw: (chart) => {
+                                const width = chart.width,
+                                    height = chart.height,
+                                    ctx = chart.ctx;
+                                ctx.restore();
+                                const fontSize = (height / 114).toFixed(2);
+                                ctx.font = `${fontSize}em sans-serif`;
+                                ctx.textBaseline = "middle";
+                                const text = chart.options.plugins.customCanvas.text,
+                                    textX = Math.round((width - ctx.measureText(text).width) / 2),
+                                    textY = height / 2;
+                                ctx.fillText(text, textX, textY);
+                                ctx.save();
+                            }
+                        }]
+                    });
+                }
+            }
+            function updateProgressChart() {
+                const ctx = progressChartEl.getContext('2d');
+                const completedData = [];
+                for (let i = 1; i <= challengeData.dayCount; i++) {
+                    const dayData = userProgress[i];
+                    completedData.push(Object.values(dayData.tasks).filter(task => task.status).length);
+                }
+                const maxTasks = challengeData.tasksPerDay.length;
+                const labels = Array.from({ length: challengeData.dayCount }, (_, i) => `Day ${i + 1}`);
+                if (progressChart) {
+                    progressChart.data.labels = labels;
+                    progressChart.data.datasets[0].data = completedData;
+                    progressChart.update();
+                } else {
+                    progressChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Tasks Completed',
+                                data: completedData,
+                                borderColor: '#364156',
+                                backgroundColor: '#7284A3',
+                                borderWidth: 2,
+                                pointBackgroundColor: '#7284A3',
+                                pointRadius: 4,
+                                fill: false,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: maxTasks,
+                                    ticks: { precision: 0 }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+            function toggleTask(day, taskId) {
+                const dayData = userProgress[day];
+                const task = dayData.tasks[taskId];
+                if (task) {
+                    task.status = !task.status;
+                    saveProgress();
+                    renderCards();
+                    updateDashboard();
+                }
+            }
+            function setupModal(modal, closeBtn, overlay, textEl, message) {
+                if (!modal || !closeBtn || !overlay || !textEl) return;
+                textEl.textContent = message;
+                modal.classList.remove('hidden', 'opacity-0', 'scale-95');
+                modal.classList.add('flex', 'opacity-100', 'scale-100');
+                overlay.classList.remove('hidden');
+                const handleClose = () => {
+                    modal.classList.remove('opacity-100', 'scale-100');
+                    modal.classList.add('opacity-0', 'scale-95');
+                    overlay.classList.add('hidden');
+                    closeBtn.removeEventListener('click', handleClose);
+                    overlay.removeEventListener('click', handleClose);
+                };
+                closeBtn.addEventListener('click', handleClose);
+                overlay.addEventListener('click', handleClose);
+            }
+            function showPromptModal(prompt) {
+                const modal = document.getElementById('promptModal');
+                const closeBtn = document.getElementById('modalClose');
+                const textEl = document.getElementById('modalText');
+                const overlay = document.getElementById('overlay');
+                setupModal(modal, closeBtn, overlay, textEl, prompt);
+            }
+            function showConfirmModal(message, onConfirm) {
+                const modal = document.getElementById('confirmModal');
+                const messageEl = document.getElementById('confirmModalMessage');
+                const yesBtn = document.getElementById('confirmModalYes');
+                const noBtn = document.getElementById('confirmModalNo');
+                const overlay = document.getElementById('confirmOverlay');
+                if (!modal || !messageEl || !yesBtn || !noBtn || !overlay) return;
+                messageEl.textContent = message;
+                modal.classList.remove('hidden', 'opacity-0', 'scale-95');
+                modal.classList.add('flex', 'opacity-100', 'scale-100');
+                overlay.classList.remove('hidden');
+                const handleClose = () => {
+                    modal.classList.remove('opacity-100', 'scale-100');
+                    modal.classList.add('opacity-0', 'scale-95');
+                    overlay.classList.add('hidden');
+                    yesBtn.removeEventListener('click', onYes);
+                    noBtn.removeEventListener('click', onNo);
+                    overlay.removeEventListener('click', onNo);
+                };
+                const onYes = () => { onConfirm(); handleClose(); };
+                const onNo = () => { handleClose(); };
+                yesBtn.addEventListener('click', onYes);
+                noBtn.addEventListener('click', onNo);
+                overlay.addEventListener('click', onNo);
+            }
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('.task-item')) {
+                    const item = e.target.closest('.task-item');
+                    const day = parseInt(item.dataset.day, 10);
+                    const taskId = item.dataset.task;
+                    toggleTask(day, taskId);
+                }
+            });
+            document.getElementById('promptButton').addEventListener('click', async () => {
+                const prompts = [
+                    "What was your biggest win today, and how did it make you feel?",
+                    "What challenge did you overcome today, and what did you learn from it?",
+                    "Describe your energy levels throughout the day. What contributed to them?",
+                    "What are you most proud of from your workout today?",
+                    "What is one thing you can do tomorrow to make your challenge a little easier?",
+                    "How did your reading today impact your mindset?",
+                    "How are you feeling physically and mentally today compared to day one?",
+                    "What small habit are you forming that you want to continue after the challenge?"
+                ];
+                const prompt = prompts[Math.floor(Math.random() * prompts.length)];
+                showPromptModal(prompt);
+            });
+            if (resetButtonEl) {
+                resetButtonEl.addEventListener('click', () => {
+                    showConfirmModal('Are you sure you want to reset your progress? This action cannot be undone.', () => {
+                        localStorage.removeItem('challengeProgress');
+                        window.location.reload();
+                    });
+                });
+            }
+            initTracker();
+        });
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-[#364156] drop-shadow-md">30-Day Challenge Tracker</h1>
+            <p class="text-lg text-gray-700 mt-2">Track your progress and stay motivated on your journey.</p>
+        </header>
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1">
+                <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                    <h2 class="text-2xl font-semibold text-[#364156] mb-4">Dashboard</h2>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="text-center">
+                            <span class="text-sm font-semibold text-gray-500 block">Total Days</span>
+                            <span id="totalTasks" class="text-lg font-bold text-[#364156]">0</span>
+                        </div>
+                        <div class="text-center">
+                            <span class="text-sm font-semibold text-gray-500 block">Days Completed</span>
+                            <span id="completedTasks" class="text-lg font-bold text-[#364156]">0</span>
+                        </div>
+                    </div>
+                    <div class="chart-container h-48 mb-6">
+                        <canvas id="completionChart"></canvas>
+                    </div>
+                    <div class="h-56 mb-6">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                    <div class="flex flex-col gap-4">
+                        <button id="promptButton" class="w-full bg-[#7284A3] text-white py-3 px-6 rounded-lg font-semibold shadow-md transition-colors duration-300 ease-in-out hover:bg-[#364156]">Get Journal Prompt</button>
+                        <button id="resetButton" class="w-full bg-red-600 text-white py-3 px-6 rounded-lg font-semibold shadow-md transition-colors duration-300 ease-in-out hover:bg-red-700">Reset Progress</button>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-2">
+                <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                    <h2 class="text-2xl font-semibold text-[#364156] mb-4">Daily Tracker</h2>
+                    <div id="daysContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40 transition-opacity"></div>
+    <div id="confirmOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40 transition-opacity"></div>
+    <div id="promptModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 opacity-0 transition-opacity">
+        <div class="bg-white rounded-lg shadow-2xl p-8 max-w-lg w-full relative transform scale-95 duration-300 ease-in-out">
+            <h3 class="text-2xl font-bold text-[#364156] mb-4">Journal Prompt</h3>
+            <p id="modalText" class="text-lg text-gray-700"></p>
+            <button id="modalClose" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
+        </div>
+    </div>
+    <div id="confirmModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 opacity-0 transition-opacity">
+        <div class="bg-white rounded-lg shadow-2xl p-8 max-w-sm w-full relative transform scale-95 duration-300 ease-in-out">
+            <h3 class="text-xl font-bold text-red-600 mb-4">Confirm Reset</h3>
+            <p id="confirmModalMessage" class="text-lg text-gray-700 mb-6"></p>
+            <div class="flex gap-4 justify-end">
+                <button id="confirmModalNo" class="bg-gray-300 text-gray-800 py-2 px-5 rounded-lg font-semibold transition-colors duration-300 hover:bg-gray-400">Cancel</button>
+                <button id="confirmModalYes" class="bg-red-600 text-white py-2 px-5 rounded-lg font-semibold transition-colors duration-300 hover:bg-red-700">Reset</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
