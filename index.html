@@ -124,40 +124,47 @@
         document.addEventListener('DOMContentLoaded', () => {
 
             const workoutSchedule = [
-                { strength: 'Strength: Lower Body & Core', cardio: 'Cardio or walk' }, // Day 1
-                { strength: 'Strength: Upper Body', cardio: 'Cardio or walk' },       // Day 2
-                { strength: 'Strength: Full Body', cardio: 'Cardio or walk' },        // Day 3
-                { strength: 'Rest Day', cardio: 'Rest Day: Stretching or Yoga' },                      // Day 4
-                { strength: 'Strength: Lower Body & Core', cardio: 'Cardio or walk' }, // Day 5
-                { strength: 'Strength: Upper Body', cardio: 'Cardio or walk' },       // Day 6
-                { strength: 'Rest Day', cardio: 'Rest Day: Stretching or Yoga' },                      // Day 7
-                
-                { strength: 'Strength: Full Body', cardio: 'Cardio or walk' },        // Day 8
-                { strength: 'Strength: Lower Body & Core', cardio: 'Cardio or walk' }, // Day 9
-                { strength: 'Rest Day', cardio: 'Rest Day: Stretching or Yoga' },                      // Day 10
-                { strength: 'Strength: Upper Body', cardio: 'Cardio or walk' },       // Day 11
-                { strength: 'Strength: Full Body', cardio: 'Cardio or walk' },        // Day 12
-                { strength: 'Rest Day', cardio: 'Rest Day: Stretching or Yoga' },                      // Day 13
-                { strength: 'Strength: Lower Body & Core', cardio: 'Cardio or walk' }, // Day 14
-                
-                { strength: 'Strength: Upper Body', cardio: 'Cardio or walk' },       // Day 15
-                { strength: 'Strength: Full Body', cardio: 'Cardio or walk' },        // Day 16
-                { strength: 'Rest Day', cardio: 'Rest Day: Stretching or Yoga' },                      // Day 17
-                { strength: 'Strength: Lower Body & Core', cardio: 'Cardio or walk' }, // Day 18
-                { strength: 'Strength: Upper Body', cardio: 'Cardio or walk' },       // Day 19
-                { strength: 'Rest Day', cardio: 'Rest Day: Stretching or Yoga' },                      // Day 20
-                { strength: 'Strength: Full Body', cardio: 'Cardio or walk' },        // Day 21
+                'Strength: Lower Body & Core', // Day 1
+                'Strength: Upper Body',        // Day 2
+                'Rest Day',                    // Day 3
+                'Strength: Full Body',         // Day 4
+                'Strength: Lower Body & Core', // Day 5
+                'Rest Day',                    // Day 6
+                'Strength: Upper Body',        // Day 7
+                'Strength: Full Body',         // Day 8
+                'Rest Day',                    // Day 9
+                'Strength: Lower Body & Core', // Day 10
+                'Strength: Upper Body',        // Day 11
+                'Strength: Full Body',         // Day 12
+                'Rest Day',                    // Day 13
+                'Strength: Lower Body & Core', // Day 14
+                'Strength: Upper Body',        // Day 15
+                'Rest Day',                    // Day 16
+                'Strength: Full Body',         // Day 17
+                'Strength: Lower Body & Core', // Day 18
+                'Strength: Upper Body',        // Day 19
+                'Rest Day',                    // Day 20
+                'Strength: Full Body',         // Day 21
+                'Strength: Lower Body & Core', // Day 22
+                'Rest Day',                    // Day 23
+                'Strength: Upper Body',        // Day 24
+                'Strength: Full Body',         // Day 25
+                'Rest Day',                    // Day 26
+                'Strength: Lower Body & Core', // Day 27
+                'Strength: Upper Body',        // Day 28
+                'Rest Day',                    // Day 29
+                'Strength: Full Body',         // Day 30
+            ];
 
-                { strength: 'Strength: Lower Body & Core', cardio: 'Cardio or walk' }, // Day 22
-                { strength: 'Rest Day', cardio: 'Rest Day: Stretching or Yoga' },                      // Day 23
-                { strength: 'Strength: Upper Body', cardio: 'Cardio or walk' },       // Day 24
-                { strength: 'Strength: Full Body', cardio: 'Cardio or walk' },        // Day 25
-                { strength: 'Rest Day', cardio: 'Rest Day: Stretching or Yoga' },                      // Day 26
-                { strength: 'Strength: Lower Body & Core', cardio: 'Cardio or walk' }, // Day 27
-                { strength: 'Strength: Upper Body', cardio: 'Cardio or walk' },       // Day 28
-
-                { strength: 'Rest Day', cardio: 'Rest Day: Stretching or Yoga' },                      // Day 29
-                { strength: 'Strength: Full Body', cardio: 'Cardio or walk' },        // Day 30
+            const cardioSchedule = [
+                'Cardio or walk', 'Cardio or walk', 'Cardio or walk', 'Cardio or walk',
+                'Cardio or walk', 'Cardio or walk', 'Cardio or walk', 'Cardio or walk',
+                'Cardio or walk', 'Cardio or walk', 'Cardio or walk', 'Cardio or walk',
+                'Cardio or walk', 'Cardio or walk', 'Cardio or walk', 'Cardio or walk',
+                'Cardio or walk', 'Cardio or walk', 'Cardio or walk', 'Cardio or walk',
+                'Cardio or walk', 'Cardio or walk', 'Cardio or walk', 'Cardio or walk',
+                'Cardio or walk', 'Cardio or walk', 'Cardio or walk', 'Cardio or walk',
+                'Cardio or walk', 'Cardio or walk'
             ];
 
             const challengeData = {
@@ -220,11 +227,11 @@
             function updateDashboard() {
                 const daysCompleted = progressData.filter(day => Object.values(day.tasks).every(t => t)).length;
                 const totalWorkouts = progressData.reduce((acc, day) => {
-                    const workoutTask = workoutSchedule[day.day - 1].strength;
-                    if (workoutTask !== 'Rest Day' && day.tasks.strength) {
+                    const workoutTask = workoutSchedule[day.day - 1];
+                    if (workoutTask.includes('Strength') && day.tasks.strength) {
                         acc++;
                     }
-                    if (day.tasks.cardio) {
+                    if (workoutTask.includes('Cardio') && day.tasks.cardio) {
                         acc++;
                     }
                     return acc;
@@ -252,13 +259,14 @@
                     const allTasksDone = Object.values(dayData.tasks).every(t => t);
                     dayCard.className = `day-card border-2 p-4 rounded-lg cursor-pointer ${allTasksDone ? 'day-card-completed' : 'bg-gray-50'}`;
                     
-                    let strengthTaskLabel = workoutSchedule[index].strength;
-                    let cardioTaskLabel = workoutSchedule[index].cardio;
+                    const workoutTaskLabel = workoutSchedule[index];
+                    const cardioTaskLabel = 'Cardio or walk';
+                    const isRestDay = workoutTaskLabel === 'Rest Day';
                     
                     let tasksHtml = `
                         <h4 class="font-bold text-lg text-center mb-3">Day ${dayData.day}</h4>
                         <ul class="space-y-2">
-                            <li class="task-item p-2 rounded ${dayData.tasks.strength ? 'completed' : ''}" data-day="${index}" data-task="strength">${strengthTaskLabel}</li>
+                            <li class="task-item p-2 rounded ${dayData.tasks.strength ? 'completed' : ''}" data-day="${index}" data-task="strength">${workoutTaskLabel}</li>
                             <li class="task-item p-2 rounded ${dayData.tasks.cardio ? 'completed' : ''}" data-day="${index}" data-task="cardio">${cardioTaskLabel}</li>
                             <li class="task-item p-2 rounded ${dayData.tasks.read ? 'completed' : ''}" data-day="${index}" data-task="read">Read or Coursera</li>
                             <li class="task-item p-2 rounded ${dayData.tasks.journal ? 'completed' : ''}" data-day="${index}" data-task="journal">Journal</li>
