@@ -6,12 +6,11 @@
     <title>Interactive 30-Day Challenge Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            font-family: 'Inter', sans-serif;
             background-color: #F3F4F6;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
         .chart-container {
             position: relative;
@@ -21,14 +20,6 @@
             margin-right: auto;
             height: 300px;
             max-height: 350px;
-        }
-        .task-item {
-            display: flex;
-            align-items: center;
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            transition: background-color 0.15s ease-in-out;
         }
         .task-item:hover {
             background-color: #E5E7EB;
@@ -49,346 +40,351 @@
             background-color: #E0E7FF;
             border-color: #A5B4FC;
         }
+        .day-card-rest {
+            background-color: #E8F5E9;
+            border-color: #C8E6C9;
+            color: #4CAF50;
+        }
+        .day-card-rest .task-item {
+            cursor: default;
+        }
+        .day-card-rest .task-item.completed {
+            background-color: #B9F6CA;
+        }
         #promptModal, #confirmModal {
             transition: opacity 0.3s ease;
         }
     </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-[#364156]">30-Day Challenge Tracker</h1>
+            <p class="text-lg text-[#7284A3] mt-2">Your interactive dashboard for building discipline and new habits.</p>
+        </header>
+
+        <main>
+            <section id="dashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-lg shadow-md flex flex-col justify-center items-center">
+                    <h3 class="text-lg font-semibold text-[#364156] mb-2">Days Completed</h3>
+                    <p id="days-completed" class="text-5xl font-bold text-[#7284A3]">0/30</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md flex flex-col justify-center items-center">
+                    <h3 class="text-lg font-semibold text-[#364156] mb-2">Total Workouts Logged</h3>
+                    <p id="workouts-logged" class="text-5xl font-bold text-[#7284A3]">0</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md md:col-span-2 lg:col-span-1">
+                    <h3 class="text-lg font-semibold text-center text-[#364156] mb-2">Overall Progress</h3>
+                    <div class="chart-container h-48 md:h-56">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="daily-tracker" class="bg-white p-6 rounded-lg shadow-md mb-8">
+                <h2 class="text-2xl font-bold text-center text-[#364156] mb-6">Daily Checklist</h2>
+                <div id="days-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                </div>
+            </section>
+
+            <section id="journaling" class="text-center">
+                <button id="prompt-btn" class="bg-[#7284A3] text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-[#364156] transition-colors">
+                    Get Today's Journal Prompt
+                </button>
+            </section>
+            
+            <footer class="text-center mt-12">
+                <button id="reset-btn" class="text-sm text-gray-500 hover:text-red-600 hover:underline">Reset All Progress</button>
+            </footer>
+
+        </main>
+    </div>
+
+    <div id="promptModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="bg-white rounded-lg shadow-2xl p-8 max-w-lg w-full transform transition-transform duration-300 scale-95">
+            <h2 class="text-2xl font-bold text-[#364156] mb-4">Journal Prompt of the Day</h2>
+            <p id="prompt-text" class="text-lg text-gray-700 mb-6"></p>
+            <button id="close-modal-btn" class="bg-[#7284A3] text-white font-bold py-2 px-5 rounded-lg hover:bg-[#364156] transition-colors w-full">Close</button>
+        </div>
+    </div>
+    
+    <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="bg-white rounded-lg shadow-2xl p-8 max-w-lg w-full transform transition-transform duration-300 scale-95 text-center">
+            <h2 class="text-xl font-bold text-red-600 mb-4">Reset Progress</h2>
+            <p class="text-lg text-gray-700 mb-6">Are you sure you want to reset all your progress? This cannot be undone.</p>
+            <div class="flex justify-center gap-4">
+                <button id="confirm-reset-btn" class="bg-red-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-red-700 transition-colors">Yes, Reset</button>
+                <button id="cancel-reset-btn" class="bg-gray-300 text-gray-800 font-bold py-2 px-5 rounded-lg hover:bg-gray-400 transition-colors">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            let userProgress = JSON.parse(localStorage.getItem('challengeProgress')) || {};
-            const daysContainer = document.getElementById('daysContainer');
-            const totalTasksEl = document.getElementById('totalTasks');
-            const completedTasksEl = document.getElementById('completedTasks');
-            const completionChartEl = document.getElementById('completionChart');
-            const progressChartEl = document.getElementById('progressChart');
-            const modalEl = document.getElementById('promptModal');
-            const modalCloseEl = document.getElementById('modalClose');
-            const modalTextEl = document.getElementById('modalText');
-            const overlayEl = document.getElementById('overlay');
-            const resetButtonEl = document.getElementById('resetButton');
-            const confirmModalEl = document.getElementById('confirmModal');
-            const confirmModalYesEl = document.getElementById('confirmModalYes');
-            const confirmModalNoEl = document.getElementById('confirmModalNo');
-            const confirmModalMessageEl = document.getElementById('confirmModalMessage');
-            let completionChart, progressChart;
-            function getChallengeData() {
-                return {
-                    dayCount: 30,
-                    tasksPerDay: [
-                        { id: 'strength', label: 'Strength Workout' },
-                        { id: 'cardio', label: 'Cardio or walk' },
-                        { id: 'read', label: 'Read or Coursera' },
-                        { id: 'journal', label: 'Journal' }
-                    ]
-                };
+
+            const challengeData = {
+                journalPrompts: [
+                    "What was my biggest success today, no matter how small?",
+                    "What challenge did I overcome today, and how did I do it?",
+                    "How is my mindset shifting as I progress through the challenge?",
+                    "What is one thing I'm grateful for related to my health today?",
+                    "How did I feel during my workouts? What surprised me?",
+                    "What is one thing I will do tomorrow to make it an even better day?",
+                    "What non-physical benefits am I noticing from this challenge?",
+                    "How can I show myself more compassion today?",
+                    "What were my energy levels like today, and what could have influenced them?",
+                    "Did I listen to my body today? What did it tell me?",
+                    "What habit from this challenge do I want to continue after 30 days?",
+                    "How did I handle a moment of temptation today?",
+                    "What is my biggest motivation for completing this challenge?",
+                    "How am I building mental toughness one day at a time?",
+                    "What is one physical improvement I've noticed so far?",
+                    "What am I most proud of from today's efforts?",
+                    "How does my mood feel after completing my workouts?",
+                    "What is one new thing I've learned about myself during this journey?",
+                    "What is my 'why'? Why did I start this challenge in the first place?",
+                    "How can I prepare for tomorrow to set myself up for success?",
+                    "What is the biggest hurdle I'm facing right now, and what's my plan to overcome it?",
+                    "How am I celebrating my progress this week?",
+                    "What is one piece of advice I would give myself from day one?",
+                    "How am I defining success for myself in this challenge?",
+                    "What feelings came up for me during the journaling process today?",
+                    "How can I better manage my time to fit in both workouts?",
+                    "What am I looking forward to most in the next week of the challenge?",
+                    "How has my relationship with food or exercise changed?",
+                    "Looking back, what has been the most significant change so far?",
+                    "What did I learn about myself that I can take with me into the future?"
+                ]
+            };
+
+            let progressData;
+            let progressChart;
+            const workoutPlan = ['strength', 'cardio', 'strength', 'cardio', 'rest', 'rest', 'rest'];
+
+            function initializeProgress() {
+                const defaultProgress = Array.from({ length: 30 }, (_, i) => {
+                    const dayType = workoutPlan[i % workoutPlan.length];
+                    const tasks = dayType === 'rest' ? { journal: false } : {
+                        workout: false,
+                        read: false,
+                        journal: false,
+                    };
+                    return {
+                        day: i + 1,
+                        type: dayType,
+                        tasks: tasks,
+                    };
+                });
+
+                const savedProgress = localStorage.getItem('challengeProgress');
+                progressData = savedProgress ? JSON.parse(savedProgress) : defaultProgress;
             }
-            const challengeData = getChallengeData();
-            function initTracker() {
-                for (let i = 1; i <= challengeData.dayCount; i++) {
-                    if (!userProgress[i]) {
-                        userProgress[i] = {
-                            completed: false,
-                            tasks: {}
-                        };
-                        challengeData.tasksPerDay.forEach(task => {
-                            userProgress[i].tasks[task.id] = { status: false, notes: '' };
-                        });
-                    }
-                }
-                saveProgress();
-                renderCards();
-                updateDashboard();
-            }
+
             function saveProgress() {
-                localStorage.setItem('challengeProgress', JSON.stringify(userProgress));
+                localStorage.setItem('challengeProgress', JSON.stringify(progressData));
             }
-            function renderCards() {
-                if (!daysContainer) return;
-                daysContainer.innerHTML = '';
-                for (let i = 1; i <= challengeData.dayCount; i++) {
-                    const dayData = userProgress[i];
-                    const allTasksCompleted = challengeData.tasksPerDay.every(task => dayData.tasks[task.id].status);
-                    const cardClass = allTasksCompleted ? 'day-card-completed' : '';
-                    const dayCard = document.createElement('div');
-                    dayCard.className = `day-card bg-white p-6 rounded-lg shadow-md flex flex-col justify-between ${cardClass}`;
-                    dayCard.innerHTML = `
-                        <div>
-                            <h3 class="text-2xl font-bold text-[#364156] mb-4">Day ${i}</h3>
-                            <div class="space-y-2">
-                                ${challengeData.tasksPerDay.map(task => `
-                                    <div class="task-item flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${dayData.tasks[task.id].status ? 'completed' : ''}" data-day="${i}" data-task="${task.id}">
-                                        <span class="text-lg text-[#7284A3] font-bold">${dayData.tasks[task.id].status ? '&#9745;' : '&#9744;'}</span>
-                                        <span class="text-sm font-semibold text-[#364156]">${task.label}</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    `;
-                    daysContainer.appendChild(dayCard);
-                }
-            }
+
             function updateDashboard() {
-                let completedDays = 0;
-                let completedTasksCount = 0;
-                let totalTasksCount = 0;
-                for (let i = 1; i <= challengeData.dayCount; i++) {
-                    totalTasksCount += challengeData.tasksPerDay.length;
-                    const dayData = userProgress[i];
-                    const dayTasks = Object.values(dayData.tasks);
-                    if (dayTasks.every(task => task.status)) {
-                        completedDays++;
-                    }
-                    completedTasksCount += dayTasks.filter(task => task.status).length;
+                const daysCompleted = progressData.filter(day => Object.values(day.tasks).every(t => t)).length;
+                const totalWorkouts = progressData.filter(day => day.tasks.workout).length;
+
+                const daysCompletedEl = document.getElementById('days-completed');
+                const workoutsLoggedEl = document.getElementById('workouts-logged');
+                if (daysCompletedEl && workoutsLoggedEl) {
+                    daysCompletedEl.textContent = `${daysCompleted}/30`;
+                    workoutsLoggedEl.textContent = totalWorkouts;
                 }
-                if (totalTasksEl) totalTasksEl.textContent = `${challengeData.dayCount} days`;
-                if (completedTasksEl) completedTasksEl.textContent = `${completedDays} days`;
-                const completionPercentage = (completedTasksCount / totalTasksCount) * 100 || 0;
-                updateCompletionChart(completionPercentage);
-                updateProgressChart();
-            }
-            function updateCompletionChart(percentage) {
-                const ctx = completionChartEl.getContext('2d');
-                if (completionChart) {
-                    completionChart.data.datasets[0].data = [percentage, 100 - percentage];
-                    completionChart.update();
-                } else {
-                    completionChart = new Chart(ctx, {
-                        type: 'doughnut',
-                        data: {
-                            datasets: [{
-                                data: [percentage, 100 - percentage],
-                                backgroundColor: ['#364156', '#D1D5DB'],
-                                borderWidth: 0,
-                                hoverOffset: 4
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            cutout: '80%',
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: { enabled: false },
-                                customCanvas: {
-                                    text: `${Math.round(percentage)}%`
-                                }
-                            }
-                        },
-                        plugins: [{
-                            id: 'customCanvas',
-                            beforeDraw: (chart) => {
-                                const width = chart.width,
-                                    height = chart.height,
-                                    ctx = chart.ctx;
-                                ctx.restore();
-                                const fontSize = (height / 114).toFixed(2);
-                                ctx.font = `${fontSize}em sans-serif`;
-                                ctx.textBaseline = "middle";
-                                const text = chart.options.plugins.customCanvas.text,
-                                    textX = Math.round((width - ctx.measureText(text).width) / 2),
-                                    textY = height / 2;
-                                ctx.fillText(text, textX, textY);
-                                ctx.save();
-                            }
-                        }]
-                    });
-                }
-            }
-            function updateProgressChart() {
-                const ctx = progressChartEl.getContext('2d');
-                const completedData = [];
-                for (let i = 1; i <= challengeData.dayCount; i++) {
-                    const dayData = userProgress[i];
-                    completedData.push(Object.values(dayData.tasks).filter(task => task.status).length);
-                }
-                const maxTasks = challengeData.tasksPerDay.length;
-                const labels = Array.from({ length: challengeData.dayCount }, (_, i) => `Day ${i + 1}`);
+
                 if (progressChart) {
-                    progressChart.data.labels = labels;
-                    progressChart.data.datasets[0].data = completedData;
+                    progressChart.data.datasets[0].data = [daysCompleted, 30 - daysCompleted];
                     progressChart.update();
-                } else {
-                    progressChart = new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Tasks Completed',
-                                data: completedData,
-                                borderColor: '#364156',
-                                backgroundColor: '#7284A3',
-                                borderWidth: 2,
-                                pointBackgroundColor: '#7284A3',
-                                pointRadius: 4,
-                                fill: false,
-                                tension: 0.4
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    max: maxTasks,
-                                    ticks: { precision: 0 }
-                                }
+                }
+            }
+            
+            function renderDayGrid() {
+                const grid = document.getElementById('days-grid');
+                if (!grid) return;
+                grid.innerHTML = ''; 
+                progressData.forEach((dayData, index) => {
+                    const dayCard = document.createElement('div');
+                    const allTasksDone = Object.values(dayData.tasks).every(t => t);
+                    const isRestDay = dayData.type === 'rest';
+
+                    dayCard.className = `day-card border-2 p-4 rounded-lg ${isRestDay ? 'day-card-rest' : allTasksDone ? 'day-card-completed' : 'bg-gray-50'}`;
+                    
+                    let tasksHtml = `<h4 class="font-bold text-lg text-center mb-3">Day ${dayData.day}</h4>`;
+                    tasksHtml += `<p class="text-sm text-center mb-4 text-gray-500">${isRestDay ? 'REST DAY' : dayData.type === 'strength' ? 'Strength & Cardio' : 'Cardio & Read'}</p>`;
+                    tasksHtml += `<ul class="space-y-2">`;
+
+                    if (isRestDay) {
+                        tasksHtml += `<li class="task-item p-2 rounded ${dayData.tasks.journal ? 'completed' : ''}" data-day="${index}" data-task="journal">Journal</li>`;
+                    } else {
+                        tasksHtml += `<li class="task-item p-2 rounded ${dayData.tasks.workout ? 'completed' : ''}" data-day="${index}" data-task="workout">Workout</li>`;
+                        tasksHtml += `<li class="task-item p-2 rounded ${dayData.tasks.read ? 'completed' : ''}" data-day="${index}" data-task="read">Read or Coursera</li>`;
+                        tasksHtml += `<li class="task-item p-2 rounded ${dayData.tasks.journal ? 'completed' : ''}" data-day="${index}" data-task="journal">Journal</li>`;
+                    }
+                    
+                    tasksHtml += `</ul>`;
+                    dayCard.innerHTML = tasksHtml;
+                    grid.appendChild(dayCard);
+                });
+            }
+
+            function setupEventListeners() {
+                const daysGrid = document.getElementById('days-grid');
+                const resetBtn = document.getElementById('reset-btn');
+
+                if (daysGrid) {
+                    daysGrid.addEventListener('click', (e) => {
+                        if (e.target.classList.contains('task-item')) {
+                            const dayIndex = parseInt(e.target.dataset.day);
+                            const taskType = e.target.dataset.task;
+
+                            if (progressData[dayIndex].type === 'rest' && taskType !== 'journal') {
+                                return; // Prevent marking non-journal tasks on rest days
                             }
+
+                            progressData[dayIndex].tasks[taskType] = !progressData[dayIndex].tasks[taskType];
+                            
+                            saveProgress();
+                            renderDayGrid();
+                            updateDashboard();
                         }
                     });
                 }
-            }
-            function toggleTask(day, taskId) {
-                const dayData = userProgress[day];
-                const task = dayData.tasks[taskId];
-                if (task) {
-                    task.status = !task.status;
-                    saveProgress();
-                    renderCards();
-                    updateDashboard();
+
+                if (resetBtn) {
+                    resetBtn.addEventListener('click', showConfirmModal);
                 }
+
+                setupModal();
+                setupConfirmModal();
             }
-            function setupModal(modal, closeBtn, overlay, textEl, message) {
-                if (!modal || !closeBtn || !overlay || !textEl) return;
-                textEl.textContent = message;
-                modal.classList.remove('hidden', 'opacity-0', 'scale-95');
-                modal.classList.add('flex', 'opacity-100', 'scale-100');
-                overlay.classList.remove('hidden');
-                const handleClose = () => {
-                    modal.classList.remove('opacity-100', 'scale-100');
-                    modal.classList.add('opacity-0', 'scale-95');
-                    overlay.classList.add('hidden');
-                    closeBtn.removeEventListener('click', handleClose);
-                    overlay.removeEventListener('click', handleClose);
-                };
-                closeBtn.addEventListener('click', handleClose);
-                overlay.addEventListener('click', handleClose);
+            
+            function setupModal() {
+                 const modal = document.getElementById('promptModal');
+                 const promptBtn = document.getElementById('prompt-btn');
+                 const closeModalBtn = document.getElementById('close-modal-btn');
+                 const promptText = document.getElementById('prompt-text');
+                 const modalContent = modal ? modal.querySelector('div') : null;
+
+                 if (promptBtn && modal) {
+                     promptBtn.addEventListener('click', () => {
+                         const today = new Date();
+                         const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+                         const promptIndex = dayOfYear % challengeData.journalPrompts.length;
+                         if (promptText) {
+                             promptText.textContent = challengeData.journalPrompts[promptIndex];
+                         }
+                         modal.classList.remove('hidden');
+                         setTimeout(() => {
+                            modal.classList.remove('opacity-0');
+                            if (modalContent) modalContent.classList.remove('scale-95');
+                         }, 10);
+                     });
+                 }
+
+                 function closeModal() {
+                     if (modal) {
+                         modal.classList.add('opacity-0');
+                         if (modalContent) modalContent.classList.add('scale-95');
+                         setTimeout(() => modal.classList.add('hidden'), 300);
+                     }
+                 }
+
+                 if (closeModalBtn) {
+                     closeModalBtn.addEventListener('click', closeModal);
+                 }
+                 if (modal) {
+                     modal.addEventListener('click', (e) => {
+                         if (e.target === modal) {
+                             closeModal();
+                         }
+                     });
+                 }
             }
-            function showPromptModal(prompt) {
-                const modal = document.getElementById('promptModal');
-                const closeBtn = document.getElementById('modalClose');
-                const textEl = document.getElementById('modalText');
-                const overlay = document.getElementById('overlay');
-                setupModal(modal, closeBtn, overlay, textEl, prompt);
-            }
-            function showConfirmModal(message, onConfirm) {
+
+            function showConfirmModal() {
                 const modal = document.getElementById('confirmModal');
-                const messageEl = document.getElementById('confirmModalMessage');
-                const yesBtn = document.getElementById('confirmModalYes');
-                const noBtn = document.getElementById('confirmModalNo');
-                const overlay = document.getElementById('confirmOverlay');
-                if (!modal || !messageEl || !yesBtn || !noBtn || !overlay) return;
-                messageEl.textContent = message;
-                modal.classList.remove('hidden', 'opacity-0', 'scale-95');
-                modal.classList.add('flex', 'opacity-100', 'scale-100');
-                overlay.classList.remove('hidden');
-                const handleClose = () => {
-                    modal.classList.remove('opacity-100', 'scale-100');
-                    modal.classList.add('opacity-0', 'scale-95');
-                    overlay.classList.add('hidden');
-                    yesBtn.removeEventListener('click', onYes);
-                    noBtn.removeEventListener('click', onNo);
-                    overlay.removeEventListener('click', onNo);
-                };
-                const onYes = () => { onConfirm(); handleClose(); };
-                const onNo = () => { handleClose(); };
-                yesBtn.addEventListener('click', onYes);
-                noBtn.addEventListener('click', onNo);
-                overlay.addEventListener('click', onNo);
-            }
-            document.addEventListener('click', (e) => {
-                if (e.target.closest('.task-item')) {
-                    const item = e.target.closest('.task-item');
-                    const day = parseInt(item.dataset.day, 10);
-                    const taskId = item.dataset.task;
-                    toggleTask(day, taskId);
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    setTimeout(() => {
+                        modal.classList.remove('opacity-0');
+                    }, 10);
                 }
-            });
-            document.getElementById('promptButton').addEventListener('click', async () => {
-                const prompts = [
-                    "What was your biggest win today, and how did it make you feel?",
-                    "What challenge did you overcome today, and what did you learn from it?",
-                    "Describe your energy levels throughout the day. What contributed to them?",
-                    "What are you most proud of from your workout today?",
-                    "What is one thing you can do tomorrow to make your challenge a little easier?",
-                    "How did your reading today impact your mindset?",
-                    "How are you feeling physically and mentally today compared to day one?",
-                    "What small habit are you forming that you want to continue after the challenge?"
-                ];
-                const prompt = prompts[Math.floor(Math.random() * prompts.length)];
-                showPromptModal(prompt);
-            });
-            if (resetButtonEl) {
-                resetButtonEl.addEventListener('click', () => {
-                    showConfirmModal('Are you sure you want to reset your progress? This action cannot be undone.', () => {
+            }
+            
+            function hideConfirmModal() {
+                const modal = document.getElementById('confirmModal');
+                if (modal) {
+                    modal.classList.add('opacity-0');
+                    setTimeout(() => modal.classList.add('hidden'), 300);
+                }
+            }
+
+            function setupConfirmModal() {
+                const confirmBtn = document.getElementById('confirm-reset-btn');
+                const cancelBtn = document.getElementById('cancel-reset-btn');
+                
+                if (confirmBtn) {
+                    confirmBtn.addEventListener('click', () => {
                         localStorage.removeItem('challengeProgress');
-                        window.location.reload();
+                        initializeProgress();
+                        renderDayGrid();
+                        updateDashboard();
+                        hideConfirmModal();
                     });
+                }
+                
+                if (cancelBtn) {
+                    cancelBtn.addEventListener('click', hideConfirmModal);
+                }
+            }
+
+            function createProgressChart() {
+                const ctx = document.getElementById('progressChart');
+                if (!ctx) return;
+                
+                progressChart = new Chart(ctx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Completed', 'Remaining'],
+                        datasets: [{
+                            data: [0, 30],
+                            backgroundColor: ['#7284A3', '#E8E8E8'],
+                            borderColor: ['#FFFFFF'],
+                            borderWidth: 4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '70%',
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                enabled: true
+                            }
+                        }
+                    }
                 });
             }
-            initTracker();
+
+            function init() {
+                initializeProgress();
+                createProgressChart();
+                renderDayGrid();
+                updateDashboard();
+                setupEventListeners();
+            }
+
+            init();
         });
     </script>
-</head>
-<body class="bg-gray-50 text-gray-800">
-    <div class="container mx-auto p-4 md:p-8">
-        <header class="text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-bold text-[#364156] drop-shadow-md">30-Day Challenge Tracker</h1>
-            <p class="text-lg text-gray-700 mt-2">Track your progress and stay motivated on your journey.</p>
-        </header>
-        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-1">
-                <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-                    <h2 class="text-2xl font-semibold text-[#364156] mb-4">Dashboard</h2>
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="text-center">
-                            <span class="text-sm font-semibold text-gray-500 block">Total Days</span>
-                            <span id="totalTasks" class="text-lg font-bold text-[#364156]">0</span>
-                        </div>
-                        <div class="text-center">
-                            <span class="text-sm font-semibold text-gray-500 block">Days Completed</span>
-                            <span id="completedTasks" class="text-lg font-bold text-[#364156]">0</span>
-                        </div>
-                    </div>
-                    <div class="chart-container h-48 mb-6">
-                        <canvas id="completionChart"></canvas>
-                    </div>
-                    <div class="h-56 mb-6">
-                        <canvas id="progressChart"></canvas>
-                    </div>
-                    <div class="flex flex-col gap-4">
-                        <button id="promptButton" class="w-full bg-[#7284A3] text-white py-3 px-6 rounded-lg font-semibold shadow-md transition-colors duration-300 ease-in-out hover:bg-[#364156]">Get Journal Prompt</button>
-                        <button id="resetButton" class="w-full bg-red-600 text-white py-3 px-6 rounded-lg font-semibold shadow-md transition-colors duration-300 ease-in-out hover:bg-red-700">Reset Progress</button>
-                    </div>
-                </div>
-            </div>
-            <div class="lg:col-span-2">
-                <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-                    <h2 class="text-2xl font-semibold text-[#364156] mb-4">Daily Tracker</h2>
-                    <div id="daysContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40 transition-opacity"></div>
-    <div id="confirmOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40 transition-opacity"></div>
-    <div id="promptModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 opacity-0 transition-opacity">
-        <div class="bg-white rounded-lg shadow-2xl p-8 max-w-lg w-full relative transform scale-95 duration-300 ease-in-out">
-            <h3 class="text-2xl font-bold text-[#364156] mb-4">Journal Prompt</h3>
-            <p id="modalText" class="text-lg text-gray-700"></p>
-            <button id="modalClose" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
-        </div>
-    </div>
-    <div id="confirmModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 opacity-0 transition-opacity">
-        <div class="bg-white rounded-lg shadow-2xl p-8 max-w-sm w-full relative transform scale-95 duration-300 ease-in-out">
-            <h3 class="text-xl font-bold text-red-600 mb-4">Confirm Reset</h3>
-            <p id="confirmModalMessage" class="text-lg text-gray-700 mb-6"></p>
-            <div class="flex gap-4 justify-end">
-                <button id="confirmModalNo" class="bg-gray-300 text-gray-800 py-2 px-5 rounded-lg font-semibold transition-colors duration-300 hover:bg-gray-400">Cancel</button>
-                <button id="confirmModalYes" class="bg-red-600 text-white py-2 px-5 rounded-lg font-semibold transition-colors duration-300 hover:bg-red-700">Reset</button>
-            </div>
-        </div>
-    </div>
+
 </body>
 </html>
