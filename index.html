@@ -123,19 +123,44 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
+            const workoutSchedule = [
+                { strength: 'Strength: Lower Body & Core', cardio: 'Cardio or walk' }, // Day 1
+                { strength: 'Strength: Upper Body', cardio: 'Cardio or walk' },       // Day 2
+                { strength: 'Strength: Full Body', cardio: 'Cardio or walk' },        // Day 3
+                { strength: 'Rest Day', cardio: 'Cardio or walk' },                      // Day 4
+                { strength: 'Strength: Lower Body & Core', cardio: 'Cardio or walk' }, // Day 5
+                { strength: 'Strength: Upper Body', cardio: 'Cardio or walk' },       // Day 6
+                { strength: 'Rest Day', cardio: 'Cardio or walk' },                      // Day 7
+                
+                { strength: 'Strength: Full Body', cardio: 'Cardio or walk' },        // Day 8
+                { strength: 'Strength: Lower Body & Core', cardio: 'Cardio or walk' }, // Day 9
+                { strength: 'Rest Day', cardio: 'Cardio or walk' },                      // Day 10
+                { strength: 'Strength: Upper Body', cardio: 'Cardio or walk' },       // Day 11
+                { strength: 'Strength: Full Body', cardio: 'Cardio or walk' },        // Day 12
+                { strength: 'Rest Day', cardio: 'Cardio or walk' },                      // Day 13
+                { strength: 'Strength: Lower Body & Core', cardio: 'Cardio or walk' }, // Day 14
+                
+                { strength: 'Strength: Upper Body', cardio: 'Cardio or walk' },       // Day 15
+                { strength: 'Strength: Full Body', cardio: 'Cardio or walk' },        // Day 16
+                { strength: 'Rest Day', cardio: 'Cardio or walk' },                      // Day 17
+                { strength: 'Strength: Lower Body & Core', cardio: 'Cardio or walk' }, // Day 18
+                { strength: 'Strength: Upper Body', cardio: 'Cardio or walk' },       // Day 19
+                { strength: 'Rest Day', cardio: 'Cardio or walk' },                      // Day 20
+                { strength: 'Strength: Full Body', cardio: 'Cardio or walk' },        // Day 21
+
+                { strength: 'Strength: Lower Body & Core', cardio: 'Cardio or walk' }, // Day 22
+                { strength: 'Rest Day', cardio: 'Cardio or walk' },                      // Day 23
+                { strength: 'Strength: Upper Body', cardio: 'Cardio or walk' },       // Day 24
+                { strength: 'Strength: Full Body', cardio: 'Cardio or walk' },        // Day 25
+                { strength: 'Rest Day', cardio: 'Cardio or walk' },                      // Day 26
+                { strength: 'Strength: Lower Body & Core', cardio: 'Cardio or walk' }, // Day 27
+                { strength: 'Strength: Upper Body', cardio: 'Cardio or walk' },       // Day 28
+
+                { strength: 'Rest Day', cardio: 'Cardio or walk' },                      // Day 29
+                { strength: 'Strength: Full Body', cardio: 'Cardio or walk' },        // Day 30
+            ];
+
             const challengeData = {
-                tasks: [
-                    { name: 'Strength: Lower Body & Core' }, { name: 'Strength: Upper Body' }, { name: 'Strength: Full Body' },
-                    { name: 'Strength: Lower Body & Core' }, { name: 'Strength: Upper Body' }, { name: 'Strength: Full Body' },
-                    { name: 'Strength: Lower Body & Core' }, { name: 'Strength: Upper Body' }, { name: 'Strength: Full Body' },
-                    { name: 'Strength: Lower Body & Core' }, { name: 'Strength: Upper Body' }, { name: 'Strength: Full Body' },
-                    { name: 'Strength: Lower Body & Core' }, { name: 'Strength: Upper Body' }, { name: 'Strength: Full Body' },
-                    { name: 'Strength: Lower Body & Core' }, { name: 'Strength: Upper Body' }, { name: 'Strength: Full Body' },
-                    { name: 'Strength: Lower Body & Core' }, { name: 'Strength: Upper Body' }, { name: 'Strength: Full Body' },
-                    { name: 'Strength: Lower Body & Core' }, { name: 'Strength: Upper Body' }, { name: 'Strength: Full Body' },
-                    { name: 'Strength: Lower Body & Core' }, { name: 'Strength: Upper Body' }, { name: 'Strength: Full Body' },
-                    { name: 'Strength: Lower Body & Core' }, { name: 'Strength: Upper Body' }, { name: 'Strength: Full Body' }
-                ],
                 journalPrompts: [
                     "What was my biggest success today, no matter how small?",
                     "What challenge did I overcome today, and how did I do it?",
@@ -180,7 +205,7 @@
                         strength: false,
                         cardio: false,
                         read: false,
-                        journal: false,
+                        journal: false
                     }
                 }));
 
@@ -195,8 +220,13 @@
             function updateDashboard() {
                 const daysCompleted = progressData.filter(day => Object.values(day.tasks).every(t => t)).length;
                 const totalWorkouts = progressData.reduce((acc, day) => {
-                    if (day.tasks.strength) acc++;
-                    if (day.tasks.cardio) acc++;
+                    const workoutTask = workoutSchedule[day.day - 1].strength;
+                    if (workoutTask !== 'Rest Day' && day.tasks.strength) {
+                        acc++;
+                    }
+                    if (day.tasks.cardio) {
+                        acc++;
+                    }
                     return acc;
                 }, 0);
 
@@ -222,11 +252,14 @@
                     const allTasksDone = Object.values(dayData.tasks).every(t => t);
                     dayCard.className = `day-card border-2 p-4 rounded-lg cursor-pointer ${allTasksDone ? 'day-card-completed' : 'bg-gray-50'}`;
                     
+                    let strengthTaskLabel = workoutSchedule[index].strength;
+                    let cardioTaskLabel = workoutSchedule[index].cardio;
+                    
                     let tasksHtml = `
                         <h4 class="font-bold text-lg text-center mb-3">Day ${dayData.day}</h4>
                         <ul class="space-y-2">
-                            <li class="task-item p-2 rounded ${dayData.tasks.strength ? 'completed' : ''}" data-day="${index}" data-task="strength">${challengeData.tasks[index].name}</li>
-                            <li class="task-item p-2 rounded ${dayData.tasks.cardio ? 'completed' : ''}" data-day="${index}" data-task="cardio">Cardio or walk</li>
+                            <li class="task-item p-2 rounded ${dayData.tasks.strength ? 'completed' : ''}" data-day="${index}" data-task="strength">${strengthTaskLabel}</li>
+                            <li class="task-item p-2 rounded ${dayData.tasks.cardio ? 'completed' : ''}" data-day="${index}" data-task="cardio">${cardioTaskLabel}</li>
                             <li class="task-item p-2 rounded ${dayData.tasks.read ? 'completed' : ''}" data-day="${index}" data-task="read">Read or Coursera</li>
                             <li class="task-item p-2 rounded ${dayData.tasks.journal ? 'completed' : ''}" data-day="${index}" data-task="journal">Journal</li>
                         </ul>
@@ -239,12 +272,16 @@
             function setupEventListeners() {
                 const daysGrid = document.getElementById('days-grid');
                 const resetBtn = document.getElementById('reset-btn');
+                const promptBtn = document.getElementById('prompt-btn');
+                const closeModalBtn = document.getElementById('close-modal-btn');
+                const modal = document.getElementById('promptModal');
 
                 if (daysGrid) {
                     daysGrid.addEventListener('click', (e) => {
-                        if (e.target.classList.contains('task-item')) {
-                            const dayIndex = parseInt(e.target.dataset.day);
-                            const taskType = e.target.dataset.task;
+                        const target = e.target.closest('.task-item');
+                        if (target) {
+                            const dayIndex = parseInt(target.dataset.day);
+                            const taskType = target.dataset.task;
                             
                             progressData[dayIndex].tasks[taskType] = !progressData[dayIndex].tasks[taskType];
                             
@@ -258,53 +295,54 @@
                 if (resetBtn) {
                     resetBtn.addEventListener('click', showConfirmModal);
                 }
-
-                setupModal();
-                setupConfirmModal();
-            }
-            
-            function setupModal() {
-                 const modal = document.getElementById('promptModal');
-                 const promptBtn = document.getElementById('prompt-btn');
-                 const closeModalBtn = document.getElementById('close-modal-btn');
-                 const promptText = document.getElementById('prompt-text');
-                 const modalContent = modal ? modal.querySelector('div') : null;
-
-                 if (promptBtn && modal) {
-                     promptBtn.addEventListener('click', () => {
-                         const today = new Date();
-                         const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
-                         const promptIndex = dayOfYear % challengeData.journalPrompts.length;
-                         if (promptText) {
-                             promptText.textContent = challengeData.journalPrompts[promptIndex];
-                         }
-                         modal.classList.remove('hidden');
-                         setTimeout(() => {
-                            modal.classList.remove('opacity-0');
-                            if (modalContent) modalContent.classList.remove('scale-95');
-                         }, 10);
-                     });
-                 }
-
-                 function closeModal() {
-                    if (modal) {
-                        modal.classList.add('opacity-0');
-                        if (modalContent) modalContent.classList.add('scale-95');
-                        setTimeout(() => modal.classList.add('hidden'), 300);
-                    }
-                 }
-
+                
+                if (promptBtn) {
+                    promptBtn.addEventListener('click', () => {
+                        setupModal(modal, closeModalBtn);
+                    });
+                }
                  if (closeModalBtn) {
-                     closeModalBtn.addEventListener('click', closeModal);
+                     closeModalBtn.addEventListener('click', () => {
+                         closeModal(modal);
+                     });
                  }
                  if (modal) {
                      modal.addEventListener('click', (e) => {
-                        if (e.target === modal) {
-                            closeModal();
-                        }
+                         if (e.target === modal) {
+                             closeModal(modal);
+                         }
                      });
                  }
+
+                setupConfirmModal();
             }
+            
+            function setupModal(modal, closeBtn) {
+                 const promptText = document.getElementById('prompt-text');
+                 const modalContent = modal ? modal.querySelector('div') : null;
+
+                 const today = new Date();
+                 const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+                 const promptIndex = dayOfYear % challengeData.journalPrompts.length;
+                 if (promptText) {
+                     promptText.textContent = challengeData.journalPrompts[promptIndex];
+                 }
+                 modal.classList.remove('hidden');
+                 setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    if (modalContent) modalContent.classList.remove('scale-95');
+                 }, 10);
+            }
+            
+            function closeModal(modal) {
+                const modalContent = modal ? modal.querySelector('div') : null;
+                if (modal) {
+                    modal.classList.add('opacity-0');
+                    if (modalContent) modalContent.classList.add('scale-95');
+                    setTimeout(() => modal.classList.add('hidden'), 300);
+                }
+            }
+
 
             function showConfirmModal() {
                 const modal = document.getElementById('confirmModal');
