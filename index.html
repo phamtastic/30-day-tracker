@@ -61,6 +61,11 @@
             background-color: #E0E7FF;
             border-color: #6366F1;
         }
+        .day-card-missed {
+            background-color: #D1D5DB;
+            border-color: #EF4444;
+            opacity: 0.7;
+        }
         #promptModal, #confirmModal {
             transition: opacity 0.3s ease-in-out;
         }
@@ -318,7 +323,8 @@
                         cardio: false,
                         read: false,
                         journal: false
-                    }
+                    },
+                    missed: false
                 }));
 
                 const savedProgress = localStorage.getItem('challengeProgress');
@@ -382,8 +388,8 @@
                     const allTasksDone = Object.values(dayData.tasks).every(t => t);
                     const isPastDay = dayData.day < challengeDay;
 
-                    // New logic to hide completed or past days
-                    if (isPastDay || allTasksDone) {
+                    // New logic to hide completed or missed days
+                    if (allTasksDone || dayData.missed) {
                         return; // Skip rendering this tile
                     }
 
@@ -392,7 +398,7 @@
                     const strengthTaskLabel = workoutSchedule[index];
 
                     const dayCard = document.createElement('div');
-                    dayCard.className = `day-card rounded-2xl shadow-lg p-6 flex flex-col justify-between ${allTasksDone ? 'day-card-completed' : ''} ${isCurrentDay ? 'current-day-card' : ''}`;
+                    dayCard.className = `day-card rounded-2xl shadow-lg p-6 flex flex-col justify-between ${isCurrentDay ? 'current-day-card' : ''} ${dayData.missed ? 'day-card-missed' : ''}`;
 
                     let tasksHtml = `
                         <div>
@@ -413,6 +419,16 @@
                             </ul>
                         </div>
                     `;
+
+                    // Add "Mark as Missed" button for past, incomplete days
+                    if (isPastDay && !allTasksDone) {
+                       tasksHtml += `
+                           <div class="mt-4 flex justify-center">
+                               <button class="mark-missed-btn bg-gray-400 text-white text-xs font-bold py-2 px-4 rounded-full shadow-md hover:bg-red-500 transition-colors" data-day-index="${index}">Mark as Missed</button>
+                           </div>
+                       `;
+                    }
+                    
                     dayCard.innerHTML = tasksHtml;
                     grid.appendChild(dayCard);
                 });
@@ -497,6 +513,8 @@
                 if (daysGrid) {
                     daysGrid.addEventListener('click', (e) => {
                         const target = e.target.closest('.task-item');
+                        const missedBtn = e.target.closest('.mark-missed-btn');
+
                         if (target) {
                             const dayIndex = parseInt(target.dataset.day);
                             const taskType = target.dataset.task;
@@ -520,6 +538,13 @@
                                 showConfettiMessage();
                             }
 
+                            saveProgress();
+                            renderDayGrid();
+                            updateDashboard();
+                        } else if (missedBtn) {
+                            const dayIndex = parseInt(missedBtn.dataset.dayIndex);
+                            progressData[dayIndex].missed = true;
+                            Object.keys(progressData[dayIndex].tasks).forEach(task => progressData[dayIndex].tasks[task] = true);
                             saveProgress();
                             renderDayGrid();
                             updateDashboard();
