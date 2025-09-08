@@ -66,7 +66,7 @@
             border-color: #EF4444;
             opacity: 0.7;
         }
-        #promptModal, #confirmModal {
+        #promptModal, #confirmModal, #workoutModal {
             transition: opacity 0.3s ease-in-out;
         }
         .modal-content {
@@ -173,9 +173,14 @@
             <section id="daily-tracker" class="bg-white p-6 rounded-2xl shadow-lg mb-12">
                 <div class="flex justify-between items-center mb-8">
                     <h2 class="text-3xl font-bold text-[#364156]">Daily Checklist</h2>
-                    <button id="view-toggle-btn" class="bg-[#7284A3] text-white font-bold py-2 px-4 rounded-full shadow-md hover:bg-[#364156] transition-colors">
-                        View
-                    </button>
+                    <div class="flex space-x-2">
+                        <button id="view-past-btn" class="bg-[#A5B4FC] text-white font-bold py-2 px-4 rounded-full shadow-md hover:bg-[#6366F1] transition-colors">
+                            View Past Days
+                        </button>
+                        <button id="view-toggle-btn" class="bg-[#7284A3] text-white font-bold py-2 px-4 rounded-full shadow-md hover:bg-[#364156] transition-colors">
+                            View Calendar
+                        </button>
+                    </div>
                 </div>
 
                 <div id="days-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -212,6 +217,14 @@
             <button id="close-modal-btn" class="bg-[#6366F1] text-white font-bold py-2 px-5 rounded-lg hover:bg-[#4338CA] transition-colors w-full">Close</button>
         </div>
     </div>
+    
+    <div id="workoutModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full transform transition-transform duration-300 scale-95 modal-content">
+            <h2 class="text-2xl font-bold text-[#364156] mb-4">Select Today's Workout</h2>
+            <ul id="workout-list" class="space-y-3 mb-6"></ul>
+            <button id="close-workout-modal-btn" class="bg-gray-300 text-gray-800 font-bold py-2 px-5 rounded-lg hover:bg-gray-400 transition-colors w-full">Cancel</button>
+        </div>
+    </div>
 
     <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden opacity-0">
         <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full transform transition-transform duration-300 scale-95 modal-content text-center">
@@ -230,6 +243,10 @@
 
             const workoutSchedule = [
                 'Strength: Lower Body & Core', 'Strength: Upper Body', 'Rest Day: Stretching or Yoga', 'Strength: Full Body', 'Strength: Lower Body & Core', 'Rest Day: Stretching or Yoga', 'Strength: Upper Body', 'Strength: Full Body', 'Rest Day: Stretching or Yoga', 'Strength: Lower Body & Core', 'Strength: Upper Body', 'Strength: Full Body', 'Rest Day: Stretching or Yoga', 'Strength: Lower Body & Core', 'Strength: Upper Body', 'Rest Day: Stretching or Yoga', 'Strength: Full Body', 'Strength: Lower Body & Core', 'Strength: Upper Body', 'Rest Day: Stretching or Yoga', 'Strength: Full Body', 'Strength: Lower Body & Core', 'Rest Day: Stretching or Yoga', 'Strength: Upper Body', 'Strength: Full Body', 'Rest Day: Stretching or Yoga', 'Strength: Lower Body & Core', 'Strength: Upper Body', 'Rest Day: Stretching or Yoga', 'Strength: Full Body',
+            ];
+            
+            const workoutOptions = [
+                'Strength: Lower Body & Core', 'Strength: Upper Body', 'Strength: Full Body', 'Rest Day: Stretching or Yoga'
             ];
 
             const challengeData = {
@@ -311,6 +328,7 @@
             let overallProgressChart;
             let isCalendarView = false;
             let currentDayView = 1;
+            let showAllDays = false;
 
             // New variable to store the start date of the challenge
             let challengeStartDate;
@@ -324,6 +342,7 @@
                         read: false,
                         journal: false
                     },
+                    strengthWorkoutOverride: null,
                     missed: false
                 }));
 
@@ -389,13 +408,13 @@
                     const isPastDay = dayData.day < challengeDay;
 
                     // New logic to hide completed or missed days
-                    if (allTasksDone || dayData.missed) {
+                    if (!showAllDays && (allTasksDone || dayData.missed)) {
                         return; // Skip rendering this tile
                     }
 
                     const isCurrentDay = dayData.day === challengeDay;
 
-                    const strengthTaskLabel = workoutSchedule[index];
+                    const strengthTaskLabel = dayData.strengthWorkoutOverride ? `${dayData.strengthWorkoutOverride} (Modified)` : workoutSchedule[index];
 
                     const dayCard = document.createElement('div');
                     dayCard.className = `day-card rounded-2xl shadow-lg p-6 flex flex-col justify-between ${isCurrentDay ? 'current-day-card' : ''} ${dayData.missed ? 'day-card-missed' : ''}`;
@@ -429,6 +448,15 @@
                        `;
                     }
                     
+                    // Add "Change Workout" button for the current day
+                    if (isCurrentDay && !allTasksDone) {
+                        tasksHtml += `
+                            <div class="mt-4 flex justify-center">
+                                <button class="change-workout-btn bg-[#F97316] text-white text-xs font-bold py-2 px-4 rounded-full shadow-md hover:bg-orange-600 transition-colors" data-day-index="${index}">Change Workout</button>
+                            </div>
+                        `;
+                    }
+
                     dayCard.innerHTML = tasksHtml;
                     grid.appendChild(dayCard);
                 });
@@ -461,6 +489,44 @@
                     `;
                 });
             }
+            
+            function openWorkoutModal(dayIndex) {
+                const modal = document.getElementById('workoutModal');
+                const workoutList = document.getElementById('workout-list');
+                if (!modal || !workoutList) return;
+                
+                workoutList.innerHTML = '';
+                
+                let lastWorkoutType = null;
+                if (dayIndex > 0) {
+                    const prevDay = progressData[dayIndex - 1];
+                    lastWorkoutType = prevDay.strengthWorkoutOverride || workoutSchedule[dayIndex - 1];
+                }
+
+                workoutOptions.forEach(option => {
+                    const listItem = document.createElement('li');
+                    const button = document.createElement('button');
+                    button.textContent = option;
+                    button.className = 'w-full text-left p-3 rounded-lg font-semibold transition-colors';
+                    button.dataset.workoutType = option;
+                    
+                    if (option === lastWorkoutType) {
+                        button.disabled = true;
+                        button.className += ' bg-gray-200 text-gray-400 cursor-not-allowed';
+                    } else {
+                        button.className += ' bg-blue-100 text-blue-800 hover:bg-blue-200';
+                    }
+                    
+                    listItem.appendChild(button);
+                    workoutList.appendChild(listItem);
+                });
+                
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    modal.querySelector('.modal-content').classList.remove('scale-95');
+                }, 10);
+            }
 
             function setupEventListeners() {
                 const daysGrid = document.getElementById('days-grid');
@@ -473,6 +539,19 @@
                 const viewToggleBtn = document.getElementById('view-toggle-btn');
                 const mainGridView = document.getElementById('days-grid');
                 const calendarGridDays = document.getElementById('calendar-grid-days');
+                const workoutModal = document.getElementById('workoutModal');
+                const closeWorkoutModalBtn = document.getElementById('close-workout-modal-btn');
+                const workoutList = document.getElementById('workout-list');
+                const viewPastBtn = document.getElementById('view-past-btn');
+
+                if (viewPastBtn) {
+                    viewPastBtn.addEventListener('click', () => {
+                        showAllDays = !showAllDays;
+                        renderDayGrid();
+                        viewPastBtn.textContent = showAllDays ? 'Hide Past Days' : 'View Past Days';
+                    });
+                }
+
 
                 if(viewToggleBtn) {
                     viewToggleBtn.addEventListener('click', () => {
@@ -514,6 +593,7 @@
                     daysGrid.addEventListener('click', (e) => {
                         const target = e.target.closest('.task-item');
                         const missedBtn = e.target.closest('.mark-missed-btn');
+                        const changeWorkoutBtn = e.target.closest('.change-workout-btn');
 
                         if (target) {
                             const dayIndex = parseInt(target.dataset.day);
@@ -548,6 +628,38 @@
                             saveProgress();
                             renderDayGrid();
                             updateDashboard();
+                        } else if (changeWorkoutBtn) {
+                             const dayIndex = parseInt(changeWorkoutBtn.dataset.dayIndex);
+                             openWorkoutModal(dayIndex);
+                        }
+                    });
+                }
+                
+                if (workoutList) {
+                    workoutList.addEventListener('click', (e) => {
+                        const button = e.target.closest('button');
+                        if (button && !button.disabled) {
+                            const dayIndex = Array.from(document.querySelectorAll('.change-workout-btn')).find(btn => btn.closest('.day-card.current-day-card')).dataset.dayIndex;
+                            const newWorkoutType = button.dataset.workoutType;
+                            progressData[dayIndex].strengthWorkoutOverride = newWorkoutType;
+                            saveProgress();
+                            closeModal(workoutModal);
+                            renderDayGrid();
+                            updateDashboard();
+                        }
+                    });
+                }
+                
+                if (closeWorkoutModalBtn) {
+                     closeWorkoutModalBtn.addEventListener('click', () => {
+                         closeModal(workoutModal);
+                     });
+                 }
+                
+                if (workoutModal) {
+                    workoutModal.addEventListener('click', (e) => {
+                        if (e.target === workoutModal) {
+                            closeModal(workoutModal);
                         }
                     });
                 }
