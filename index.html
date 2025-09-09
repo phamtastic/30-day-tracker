@@ -282,14 +282,6 @@
                     "How can I bring more mindfulness into my daily routine?",
                     "What is one promise I can make to myself for the final days of the challenge?"
                 ],
-                confettiMessages: [
-                    "You did it!",
-                    "Keep up the great work!",
-                    "Another day, another win!",
-                    "Day completed!",
-                    "Great job!",
-                    "Progress, not perfection."
-                ],
                 stoicQuotes: [
                     "The best revenge is to be unlike him who performed the injury. - Marcus Aurelius",
                     "We suffer more often in imagination than in reality. - Seneca",
@@ -321,6 +313,14 @@
                     "How long are you going to wait before you demand the best for yourself? - Epictetus",
                     "The things you think about determine the quality of your mind. Your soul takes on the color of your thoughts. - Marcus Aurelius",
                     "It is not the man who has too little, but the man who craves more, that is poor. - Seneca"
+                ],
+                confettiMessages: [
+                    "You did it!",
+                    "Keep up the great work!",
+                    "Another day, another win!",
+                    "Day completed!",
+                    "Great job!",
+                    "Progress, not perfection."
                 ]
             };
 
@@ -332,6 +332,16 @@
 
             // New variable to store the start date of the challenge
             let challengeStartDate;
+
+            // Function to shuffle an array (Fisher-Yates algorithm)
+            function shuffleArray(array) {
+                let shuffled = [...array];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                return shuffled;
+            }
 
             function initializeProgress() {
                 const defaultProgress = Array.from({ length: 30 }, (_, i) => ({
@@ -347,7 +357,20 @@
                 }));
 
                 const savedProgress = localStorage.getItem('challengeProgress');
-                progressData = savedProgress ? JSON.parse(savedProgress) : defaultProgress;
+                const savedPrompts = localStorage.getItem('shuffledJournalPrompts');
+                const savedQuotes = localStorage.getItem('shuffledStoicQuotes');
+                
+                if (savedProgress) {
+                    progressData = JSON.parse(savedProgress);
+                    challengeData.journalPrompts = JSON.parse(savedPrompts);
+                    challengeData.stoicQuotes = JSON.parse(savedQuotes);
+                } else {
+                    progressData = defaultProgress;
+                    challengeData.journalPrompts = shuffleArray(challengeData.journalPrompts);
+                    challengeData.stoicQuotes = shuffleArray(challengeData.stoicQuotes);
+                    localStorage.setItem('shuffledJournalPrompts', JSON.stringify(challengeData.journalPrompts));
+                    localStorage.setItem('shuffledStoicQuotes', JSON.stringify(challengeData.stoicQuotes));
+                }
 
                 // Initialize or retrieve challenge start date
                 const savedStartDate = localStorage.getItem('challengeStartDate');
@@ -743,7 +766,9 @@
                 if (confirmBtn) {
                     confirmBtn.addEventListener('click', () => {
                         localStorage.removeItem('challengeProgress');
-                        localStorage.removeItem('challengeStartDate'); // Reset start date on full reset
+                        localStorage.removeItem('challengeStartDate');
+                        localStorage.removeItem('shuffledJournalPrompts');
+                        localStorage.removeItem('shuffledStoicQuotes'); 
                         initializeProgress();
                         renderDayGrid();
                         updateDashboard();
