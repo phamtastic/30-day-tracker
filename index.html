@@ -691,23 +691,21 @@
                     resetBtn.addEventListener('click', showConfirmModal);
                 }
 
-                if (promptBtn) {
+                try {
                     promptBtn.addEventListener('click', () => {
                         setupModal(modal, closeModalBtn);
                     });
+                    closeModalBtn.addEventListener('click', () => {
+                        closeModal(modal);
+                    });
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) {
+                            closeModal(modal);
+                        }
+                    });
+                } catch(error) {
+                    console.error('Error setting up modal event listeners:', error);
                 }
-                 if (closeModalBtn) {
-                     closeModalBtn.addEventListener('click', () => {
-                         closeModal(modal);
-                     });
-                 }
-                 if (modal) {
-                     modal.addEventListener('click', (e) => {
-                         if (e.target === modal) {
-                             closeModal(modal);
-                         }
-                     });
-                 }
 
                 setupConfirmModal();
             }
