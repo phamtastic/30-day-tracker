@@ -7,6 +7,558 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.js"></script>
+    <script>
+        // Use global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // Function to shuffle an array (Fisher-Yates algorithm)
+        function shuffleArray(array) {
+            let shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        const workoutSchedule = [
+            'Strength: Lower Body & Core', 'Strength: Upper Body', 'Rest Day: Stretching or Yoga', 'Strength: Full Body', 'Strength: Lower Body & Core', 'Rest Day: Stretching or Yoga', 'Strength: Upper Body', 'Strength: Full Body', 'Rest Day: Stretching or Yoga', 'Strength: Lower Body & Core', 'Strength: Upper Body', 'Strength: Full Body', 'Rest Day: Stretching or Yoga', 'Strength: Lower Body & Core', 'Strength: Upper Body', 'Rest Day: Stretching or Yoga', 'Strength: Full Body', 'Strength: Lower Body & Core', 'Strength: Upper Body', 'Rest Day: Stretching or Yoga', 'Strength: Full Body', 'Strength: Lower Body & Core', 'Rest Day: Stretching or Yoga', 'Strength: Upper Body', 'Strength: Full Body', 'Rest Day: Stretching or Yoga', 'Strength: Lower Body & Core', 'Strength: Upper Body', 'Rest Day: Stretching or Yoga', 'Strength: Full Body',
+        ];
+        
+        const workoutOptions = [
+            'Strength: Lower Body & Core', 'Strength: Upper Body', 'Strength: Full Body', 'Rest Day: Stretching or Yoga'
+        ];
+
+        const baseChallengeData = {
+            journalPrompts: [
+                "What is one small win I had today that I'm proud of?",
+                "How did I handle a moment of stress or discomfort today?",
+                "What is a new skill or piece of knowledge I gained today?",
+                "What is one act of kindness I showed myself today?",
+                "If I could give myself advice at the start of this challenge, what would it be?",
+                "What is one thing I am grateful for right now, big or small?",
+                "How has my perspective on challenges shifted since starting this journey?",
+                "Describe a moment today when I was fully present and engaged.",
+                "What feelings came up for me during my workout today?",
+                "What is one positive thought I can focus on for the rest of the day?",
+                "How did my mindset affect my performance today?",
+                "What is one habit I've started that I want to continue after this challenge?",
+                "What is a lesson I can take away from a difficult moment today?",
+                "How am I building resilience with each day of this challenge?",
+                "What is one thing I am looking forward to tomorrow?",
+                "What physical improvements have I noticed so far?",
+                "What's one thing I can do to take better care of my mental health today?",
+                "How has my body's relationship with food or exercise changed?",
+                "What is one fear or self-doubt I am working to overcome?",
+                "How can I celebrate my progress, no matter how small?",
+                "What's one thing I learned about myself today?",
+                "How does this challenge align with my long-term goals?",
+                "What is one thing I can simplify in my life right now?",
+                "How did I show up for myself today?",
+                "What is a personal truth that this challenge has revealed to me?",
+                "What is one thing I can forgive myself for today?",
+                "What is a limiting belief that is holding me back, and how can I challenge it?",
+                "Looking back, what has been the most significant change I've experienced?",
+                "How can I bring more mindfulness into my daily routine?",
+                "What is one promise I can make to myself for the final days of the challenge?"
+            ],
+            stoicQuotes: [
+                "The best revenge is to be unlike him who performed the injury. - Marcus Aurelius",
+                "We suffer more often in imagination than in reality. - Seneca",
+                "Waste no more time arguing about what a good man should be. Be one. - Marcus Aurelius",
+                "Hang on to your youthful enthusiasms - you’ll be able to use them better later. - Seneca",
+                "Do not spoil what you have by desiring what you have not; remember that what you now have was once among the things you only hoped for. - Epicurus",
+                "If you are distressed by anything external, the pain is not due to the thing itself, but to your estimate of it; and this you have the power to revoke at any time. - Marcus Aurelius",
+                "Luck is what happens when preparation meets opportunity. - Seneca",
+                "The mind that is anxious about future events is miserable. - Seneca",
+                "The soul becomes dyed with the color of its thoughts. - Marcus Aurelius",
+                "First say to yourself what you would be; and then do what you have to do. - Epictetus",
+                "It is not that we have a short time to live, but that we waste a lot of it. - Seneca",
+                "Difficulties strengthen the mind, as labor does the body. - Seneca",
+                "Never let the future disturb you. You will meet it, if you have to, with the same weapons of reason which today arm you against the present. - Marcus Aurelius",
+                "The whole future lies in uncertainty: live immediately. - Seneca",
+                "He who fears death will never do anything worthy of a living man. - Seneca",
+                "You have power over your mind - not outside events. Realize this, and you will find strength. - Marcus Aurelius",
+                "The greatest wealth is to live content with little. - Plato",
+                "It is not what happens to you, but how you react to it that matters. - Epictetus",
+                "Freedom is the only worthy goal in life. It is won by disregarding things that lie beyond our control. - Epictetus",
+                "Every difficulty in life is an opportunity to grow. - Epictetus",
+                "Man is not worried by real problems so much as by his imagined anxieties about real problems. - Epictetus",
+                "The tranquility that comes when you stop caring what they say. Or think. Or do. Only what you do. - Marcus Aurelius",
+                "Stop telling yourself the stories that keep you stuck. - Epictetus",
+                "No person has the power to have everything they desire, but it is in their power not to want what they don't possess, and to cheerfully turn what is given to their advantage. - Seneca",
+                "External things are not my problems. Only my own judgments are. - Marcus Aurelius",
+                "You must unlearn what you have learned. - Epictetus",
+                "If a man knows not to which port he sails, no wind is favorable. - Seneca",
+                "How long are you going to wait before you demand the best for yourself? - Epictetus",
+                "The things you think about determine the quality of your mind. Your soul takes on the color of your thoughts. - Marcus Aurelius",
+                "It is not the man who has too little, but the man who craves more, that is poor. - Seneca"
+            ],
+            confettiMessages: [
+                "You did it!",
+                "Keep up the great work!",
+                "Another day, another win!",
+                "Day completed!",
+                "Great job!",
+                "Progress, not perfection."
+            ]
+        };
+
+        let progressData = [];
+        let challengeStartDate;
+        let showAllDays = false;
+        let isCalendarView = false;
+        let currentDayIndexToChange = null;
+
+        function initializeProgress() {
+            const savedProgress = localStorage.getItem('challengeProgress');
+            const savedPrompts = localStorage.getItem('shuffledJournalPrompts');
+            const savedQuotes = localStorage.getItem('shuffledStoicQuotes');
+            const savedStartDate = localStorage.getItem('challengeStartDate');
+
+            if (savedProgress && savedStartDate) {
+                progressData = JSON.parse(savedProgress);
+                challengeStartDate = savedStartDate;
+                baseChallengeData.journalPrompts = JSON.parse(savedPrompts);
+                baseChallengeData.stoicQuotes = JSON.parse(savedQuotes);
+                updateDashboard();
+            } else {
+                // Show date picker modal if no start date is set
+                showStartDateModal();
+            }
+        }
+
+        function saveProgress() {
+            localStorage.setItem('challengeProgress', JSON.stringify(progressData));
+            localStorage.setItem('challengeStartDate', challengeStartDate);
+        }
+        
+        function showStartDateModal() {
+            const modal = document.getElementById('startDateModal');
+            if (!modal) return;
+            const today = new Date().toISOString().slice(0, 10);
+            document.getElementById('start-date-input').max = today;
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+            }, 10);
+        }
+
+        function setStartDate() {
+            const selectedDate = document.getElementById('start-date-input').value;
+            if (!selectedDate) {
+                return;
+            }
+            challengeStartDate = selectedDate;
+            const defaultProgress = Array.from({ length: 30 }, (_, i) => ({
+                day: i + 1,
+                tasks: { strength: false, cardio: false, read: false, journal: false },
+                strengthWorkoutOverride: null,
+                missed: false
+            }));
+            progressData = defaultProgress;
+            baseChallengeData.journalPrompts = shuffleArray(baseChallengeData.journalPrompts);
+            baseChallengeData.stoicQuotes = shuffleArray(baseChallengeData.stoicQuotes);
+            localStorage.setItem('shuffledJournalPrompts', JSON.stringify(baseChallengeData.journalPrompts));
+            localStorage.setItem('shuffledStoicQuotes', JSON.stringify(baseChallengeData.stoicQuotes));
+            saveProgress();
+            hideStartDateModal();
+            updateDashboard();
+        }
+
+        function hideStartDateModal() {
+            const modal = document.getElementById('startDateModal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        function updateDashboard() {
+            if (progressData.length === 0) return;
+            const daysCompleted = progressData.filter(day => Object.values(day.tasks).every(t => t)).length;
+            const totalWorkouts = progressData.reduce((acc, day, index) => {
+                if (day.tasks.strength) {
+                    acc++;
+                }
+                if (day.tasks.cardio) {
+                    acc++;
+                }
+                return acc;
+            }, 0);
+
+            const daysCompletedEl = document.getElementById('days-completed');
+            const workoutsLoggedEl = document.getElementById('workouts-logged');
+            if (daysCompletedEl && workoutsLoggedEl) {
+                daysCompletedEl.textContent = `${daysCompleted}/30`;
+                workoutsLoggedEl.textContent = totalWorkouts;
+            }
+            updateOverallProgressChart();
+            updateStoicQuote();
+            updateCurrentDate();
+            if (isCalendarView) {
+                renderCalendarView();
+            } else {
+                renderDayGrid();
+            }
+        }
+
+        function renderDayGrid() {
+            const grid = document.getElementById('days-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            const today = new Date();
+            const startDate = new Date(challengeStartDate);
+            const challengeDay = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
+
+            progressData.forEach((dayData, index) => {
+                const allTasksDone = Object.values(dayData.tasks).every(t => t);
+                const isPastDay = dayData.day < challengeDay;
+                const isCurrentDay = dayData.day === challengeDay;
+
+                const strengthTaskLabel = dayData.strengthWorkoutOverride ? `${dayData.strengthWorkoutOverride} (Modified)` : workoutSchedule[index];
+                const dayCard = document.createElement('div');
+                
+                // Only hide past days if they are completed or missed
+                if (!showAllDays && (allTasksDone || dayData.missed) && !isCurrentDay) {
+                    return;
+                }
+
+                dayCard.className = `day-card rounded-2xl shadow-lg p-6 flex flex-col justify-between ${isCurrentDay && !showAllDays ? 'current-day-card' : ''} ${dayData.missed ? 'day-card-missed' : ''}`;
+                
+                let tasksHtml = `
+                    <div>
+                        <h4 class="font-bold text-xl text-center mb-3 text-[#364156]" data-day="${index + 1}">Day ${dayData.day}</h4>
+                        <ul class="space-y-2">
+                            <li class="task-item flex items-center gap-2 rounded-lg cursor-pointer ${dayData.tasks.strength ? 'completed' : 'bg-gray-50'}" data-day="${index}" data-task="strength">
+                                <span class="text-sm font-semibold text-[#364156]">${strengthTaskLabel}</span>
+                            </li>
+                            <li class="task-item flex items-center gap-2 rounded-lg cursor-pointer ${dayData.tasks.cardio ? 'completed' : 'bg-gray-50'}" data-day="${index}" data-task="cardio">
+                                <span class="text-sm font-semibold text-[#364156]">Cardio or walk</span>
+                            </li>
+                            <li class="task-item flex items-center gap-2 rounded-lg cursor-pointer ${dayData.tasks.read ? 'completed' : 'bg-gray-50'}" data-day="${index}" data-task="read">
+                                <span class="text-sm font-semibold text-[#364156]">Read or Coursera</span>
+                            </li>
+                            <li class="task-item flex items-center gap-2 rounded-lg cursor-pointer ${dayData.tasks.journal ? 'completed' : 'bg-gray-50'}" data-day="${index}" data-task="journal">
+                                <span class="text-sm font-semibold text-[#364156]">Journal</span>
+                            </li>
+                        </ul>
+                    </div>
+                `;
+                if (!allTasksDone && !dayData.missed && (isCurrentDay || showAllDays)) {
+                   tasksHtml += `<div class="mt-4 flex flex-col justify-center items-center"><button class="change-workout-btn bg-[#F97316] text-white text-xs font-bold py-2 px-4 rounded-full shadow-md hover:bg-orange-600 transition-colors" data-day-index="${index}">Change Workout</button></div>`;
+                }
+                if (isPastDay && !allTasksDone && !dayData.missed) {
+                   tasksHtml += `<div class="mt-4 flex justify-center"><button class="mark-missed-btn bg-gray-400 text-white text-xs font-bold py-2 px-4 rounded-full shadow-md hover:bg-red-500 transition-colors" data-day-index="${index}">Mark as Missed</button></div>`;
+                }
+                dayCard.innerHTML = tasksHtml;
+                grid.appendChild(dayCard);
+            });
+        }
+
+        function renderCalendarView() {
+            const grid = document.getElementById('calendar-grid-days');
+            if (!grid) return;
+            grid.innerHTML = '';
+            const today = new Date();
+            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
+            for (let i = 0; i < firstDayOfMonth; i++) {
+                grid.innerHTML += `<div class="calendar-day-card"></div>`;
+            }
+            progressData.forEach((dayData, index) => {
+                const allTasksDone = Object.values(dayData.tasks).every(t => t);
+                const someTasksDone = Object.values(dayData.tasks).some(t => t);
+                let cardClass = '';
+                if (allTasksDone) {
+                    cardClass = 'completed-day';
+                } else if (someTasksDone) {
+                    cardClass = 'some-tasks-day';
+                }
+                grid.innerHTML += `<div class="calendar-day-card ${cardClass}" data-day="${index + 1}"><span class="text-2xl font-bold">${dayData.day}</span></div>`;
+            });
+        }
+        
+        function openWorkoutModal(dayIndex) {
+            currentDayIndexToChange = dayIndex;
+            const modal = document.getElementById('workoutModal');
+            const workoutList = document.getElementById('workout-list');
+            if (!modal || !workoutList) return;
+            workoutList.innerHTML = '';
+            
+            let lastWorkoutType = null;
+            if (dayIndex > 0) {
+                const prevDay = progressData[dayIndex - 1];
+                lastWorkoutType = prevDay.strengthWorkoutOverride || workoutSchedule[dayIndex - 1];
+            }
+
+            workoutOptions.forEach(option => {
+                const listItem = document.createElement('li');
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.className = 'w-full text-left p-3 rounded-lg font-semibold transition-colors';
+                button.dataset.workoutType = option;
+                
+                if (option === lastWorkoutType) {
+                    button.disabled = true;
+                    button.className += ' bg-gray-200 text-gray-400 cursor-not-allowed';
+                } else {
+                    button.className += ' bg-blue-100 text-blue-800 hover:bg-blue-200';
+                }
+                
+                listItem.appendChild(button);
+                workoutList.appendChild(listItem);
+            });
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('.modal-content').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function setupEventListeners() {
+            const daysGrid = document.getElementById('days-grid');
+            const resetBtn = document.getElementById('reset-btn');
+            const promptBtn = document.getElementById('prompt-btn');
+            const modal = document.getElementById('promptModal');
+            const confettiMessageEl = document.getElementById('confettiMessage');
+            const viewToggleBtn = document.getElementById('view-toggle-btn');
+            const mainGridView = document.getElementById('days-grid');
+            const calendarView = document.getElementById('calendar-view');
+            const calendarGridDays = document.getElementById('calendar-grid-days');
+            const workoutModal = document.getElementById('workoutModal');
+            const closeWorkoutModalBtn = document.getElementById('close-workout-modal-btn');
+            const workoutList = document.getElementById('workout-list');
+            const viewPastBtn = document.getElementById('view-past-btn');
+            const setStartDateBtn = document.getElementById('set-start-date-btn');
+
+            if (setStartDateBtn) {
+                setStartDateBtn.addEventListener('click', setStartDate);
+            }
+
+            if (viewPastBtn) {
+                viewPastBtn.addEventListener('click', () => {
+                    showAllDays = !showAllDays;
+                    renderDayGrid();
+                    viewPastBtn.textContent = showAllDays ? 'Hide Past Days' : 'View Past Days';
+                });
+            }
+
+            if(viewToggleBtn) {
+                viewToggleBtn.addEventListener('click', () => {
+                    isCalendarView = !isCalendarView;
+                    if (isCalendarView) {
+                        mainGridView.classList.add('hidden');
+                        calendarView.classList.remove('hidden');
+                        renderCalendarView();
+                        viewToggleBtn.textContent = 'List View';
+                    } else {
+                        mainGridView.classList.remove('hidden');
+                        calendarView.classList.add('hidden');
+                        renderDayGrid();
+                        viewToggleBtn.textContent = 'Calendar View';
+                    }
+                });
+            }
+
+            if(calendarGridDays) {
+                calendarGridDays.addEventListener('click', (e) => {
+                    const target = e.target.closest('.calendar-day-card');
+                    if (target) {
+                        const currentDayView = parseInt(target.dataset.day);
+                        mainGridView.classList.remove('hidden');
+                        calendarView.classList.add('hidden');
+                        renderDayGrid();
+                        viewToggleBtn.textContent = 'Calendar View';
+                        const cardToScrollTo = document.querySelector(`.day-card h4.text-xl[data-day='${currentDayView}']`);
+                        if (cardToScrollTo) {
+                            cardToScrollTo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    }
+                });
+            }
+
+            if (daysGrid) {
+                daysGrid.addEventListener('click', (e) => {
+                    const target = e.target.closest('.task-item');
+                    const missedBtn = e.target.closest('.mark-missed-btn');
+                    const changeWorkoutBtn = e.target.closest('.change-workout-btn');
+                    if (target) {
+                        const dayIndex = parseInt(target.dataset.day);
+                        const taskType = target.dataset.task;
+                        progressData[dayIndex].tasks[taskType] = !progressData[dayIndex].tasks[taskType];
+                        saveProgress();
+                        if (progressData[dayIndex].tasks[taskType]) {
+                            target.classList.add('glowing-task');
+                            setTimeout(() => target.classList.remove('glowing-task'), 2000);
+                        }
+                        const allTasksDone = Object.values(progressData[dayIndex].tasks).every(t => t);
+                        if (allTasksDone) {
+                            confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }});
+                            showConfettiMessage();
+                        }
+                        renderDayGrid();
+                        updateDashboard();
+                    } else if (missedBtn) {
+                        const dayIndex = parseInt(missedBtn.dataset.dayIndex);
+                        progressData[dayIndex].missed = true;
+                        Object.keys(progressData[dayIndex].tasks).forEach(task => progressData[dayIndex].tasks[task] = true);
+                        saveProgress();
+                        renderDayGrid();
+                        updateDashboard();
+                    } else if (changeWorkoutBtn) {
+                         const dayIndex = parseInt(changeWorkoutBtn.dataset.dayIndex);
+                         openWorkoutModal(dayIndex);
+                    }
+                });
+            }
+            
+            if (workoutList) {
+                workoutList.addEventListener('click', (e) => {
+                    const button = e.target.closest('button');
+                    if (button && !button.disabled) {
+                        const newWorkoutType = button.dataset.workoutType;
+                        progressData[currentDayIndexToChange].strengthWorkoutOverride = newWorkoutType;
+                        saveProgress();
+                        closeModal(workoutModal);
+                        renderDayGrid();
+                        updateDashboard();
+                    }
+                });
+            }
+            
+            if (closeWorkoutModalBtn) {
+                 closeWorkoutModalBtn.addEventListener('click', () => closeModal(workoutModal));
+             }
+            
+            if (workoutModal) {
+                workoutModal.addEventListener('click', (e) => {
+                    if (e.target === workoutModal) {
+                        closeModal(workoutModal);
+                    }
+                });
+            }
+
+            if (resetBtn) {
+                resetBtn.addEventListener('click', showConfirmModal);
+            }
+
+            try {
+                if (promptBtn) {
+                    promptBtn.addEventListener('click', () => setupModal(modal));
+                }
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal || e.target.id === 'close-modal-btn') {
+                        closeModal(modal);
+                    }
+                });
+            } catch(error) {
+                console.error('Error setting up modal event listeners:', error);
+            }
+
+            setupConfirmModal();
+        }
+
+        function setupModal(modal) {
+             const promptText = document.getElementById('prompt-text');
+             const modalContent = modal ? modal.querySelector('div') : null;
+             const today = new Date();
+             const startDate = new Date(challengeStartDate);
+             const challengeDay = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
+             const promptIndex = Math.min(challengeDay - 1, baseChallengeData.journalPrompts.length - 1);
+             if (promptText) {
+                 promptText.textContent = baseChallengeData.journalPrompts[promptIndex];
+             }
+             modal.classList.remove('hidden');
+             setTimeout(() => {
+                 modal.classList.remove('opacity-0');
+                 if (modalContent) modalContent.classList.remove('scale-95');
+             }, 10);
+        }
+
+        function closeModal(modal) {
+            const modalContent = modal ? modal.querySelector('div') : null;
+            if (modal) {
+                modal.classList.add('opacity-0');
+                if (modalContent) modalContent.classList.add('scale-95');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+        }
+
+        function showConfirmModal() {
+            const modal = document.getElementById('confirmModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                setTimeout(() => modal.classList.remove('opacity-0'), 10);
+            }
+        }
+
+        function hideConfirmModal() {
+            const modal = document.getElementById('confirmModal');
+            if (modal) {
+                modal.classList.add('opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+        }
+
+        function setupConfirmModal() {
+            const confirmBtn = document.getElementById('confirm-reset-btn');
+            const cancelBtn = document.getElementById('cancel-reset-btn');
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', () => {
+                    localStorage.clear();
+                    initializeProgress();
+                    hideConfirmModal();
+                });
+            }
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', hideConfirmModal);
+            }
+        }
+
+        function showConfettiMessage() {
+            const messageEl = document.getElementById('confettiMessage');
+            const messages = baseChallengeData.confettiMessages;
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            messageEl.textContent = randomMessage;
+            messageEl.classList.remove('hidden');
+            setTimeout(() => messageEl.style.opacity = 1, 10);
+            setTimeout(() => {
+                messageEl.style.opacity = 0;
+                setTimeout(() => messageEl.classList.add('hidden'), 500);
+            }, 2000);
+        }
+
+        function updateOverallProgressChart() {
+            const daysCompleteCount = progressData.filter(day => Object.values(day.tasks).every(t => t)).length;
+            const completionPercentage = (daysCompleteCount / 30) * 100 || 0;
+            const percentageEl = document.getElementById('overall-progress-percentage');
+            if(percentageEl) {
+                percentageEl.textContent = `${Math.round(completionPercentage)}%`;
+            }
+        }
+
+        function updateStoicQuote() {
+            const quoteEl = document.getElementById('stoic-quote');
+            if (!quoteEl) return;
+            const today = new Date();
+            const startDate = new Date(challengeStartDate);
+            const challengeDay = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
+            const quoteIndex = Math.min(challengeDay - 1, baseChallengeData.stoicQuotes.length - 1);
+            quoteEl.textContent = `"${baseChallengeData.stoicQuotes[quoteIndex]}"`;
+        }
+
+        function updateCurrentDate() {
+            const dateEl = document.getElementById('current-date');
+            if (!dateEl) return;
+            const today = new Date();
+            const formattedDate = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'});
+            dateEl.textContent = formattedDate;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeProgress();
+            setupEventListeners();
+        });
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Chosen Palette: Energetic & Playful -->
     <!-- Application Structure Plan: The application is designed as an interactive dashboard. This structure was chosen over a linear infographic to better suit the task-oriented nature of a daily tracker. The user is immediately presented with an an overview of their progress (KPIs and charts) at the top, which provides instant feedback and motivation. Below, a grid of interactive day-cards allows for non-linear interaction, letting the user log progress for any day at any time. A dedicated, button-triggered "Prompt of the Day" feature makes the journaling task more engaging. This architecture prioritizes user interaction, real-time feedback, and clear status visualization, which is the most effective way to make a static plan like this consumable and motivating as a web application. -->
@@ -66,7 +618,7 @@
             border-color: #EF4444;
             opacity: 0.7;
         }
-        #promptModal, #confirmModal, #workoutModal {
+        #promptModal, #confirmModal, #workoutModal, #startDateModal {
             transition: opacity 0.3s ease-in-out;
         }
         .modal-content {
@@ -237,589 +789,13 @@
         </div>
     </div>
 
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-
-            const workoutSchedule = [
-                'Strength: Lower Body & Core', 'Strength: Upper Body', 'Rest Day: Stretching or Yoga', 'Strength: Full Body', 'Strength: Lower Body & Core', 'Rest Day: Stretching or Yoga', 'Strength: Upper Body', 'Strength: Full Body', 'Rest Day: Stretching or Yoga', 'Strength: Lower Body & Core', 'Strength: Upper Body', 'Strength: Full Body', 'Rest Day: Stretching or Yoga', 'Strength: Lower Body & Core', 'Strength: Upper Body', 'Rest Day: Stretching or Yoga', 'Strength: Full Body', 'Strength: Lower Body & Core', 'Strength: Upper Body', 'Rest Day: Stretching or Yoga', 'Strength: Full Body', 'Strength: Lower Body & Core', 'Rest Day: Stretching or Yoga', 'Strength: Upper Body', 'Strength: Full Body', 'Rest Day: Stretching or Yoga', 'Strength: Lower Body & Core', 'Strength: Upper Body', 'Rest Day: Stretching or Yoga', 'Strength: Full Body',
-            ];
-            
-            const workoutOptions = [
-                'Strength: Lower Body & Core', 'Strength: Upper Body', 'Strength: Full Body', 'Rest Day: Stretching or Yoga'
-            ];
-
-            const challengeData = {
-                journalPrompts: [
-                    "What is one small win I had today that I'm proud of?",
-                    "How did I handle a moment of stress or discomfort today?",
-                    "What is a new skill or piece of knowledge I gained today?",
-                    "What is one act of kindness I showed myself today?",
-                    "If I could give myself advice at the start of this challenge, what would it be?",
-                    "What is one thing I am grateful for right now, big or small?",
-                    "How has my perspective on challenges shifted since starting this journey?",
-                    "Describe a moment today when I was fully present and engaged.",
-                    "What feelings came up for me during my workout today?",
-                    "What is one positive thought I can focus on for the rest of the day?",
-                    "How did my mindset affect my performance today?",
-                    "What is one habit I've started that I want to continue after this challenge?",
-                    "What is a lesson I can take away from a difficult moment today?",
-                    "How am I building resilience with each day of this challenge?",
-                    "What is one thing I am looking forward to tomorrow?",
-                    "What physical improvements have I noticed so far?",
-                    "What's one thing I can do to take better care of my mental health today?",
-                    "How has my body's relationship with food or exercise changed?",
-                    "What is one fear or self-doubt I am working to overcome?",
-                    "How can I celebrate my progress, no matter how small?",
-                    "What's one thing I learned about myself today?",
-                    "How does this challenge align with my long-term goals?",
-                    "What is one thing I can simplify in my life right now?",
-                    "How did I show up for myself today?",
-                    "What is a personal truth that this challenge has revealed to me?",
-                    "What is one thing I can forgive myself for today?",
-                    "What is a limiting belief that is holding me back, and how can I challenge it?",
-                    "Looking back, what has been the most significant change I've experienced?",
-                    "How can I bring more mindfulness into my daily routine?",
-                    "What is one promise I can make to myself for the final days of the challenge?"
-                ],
-                confettiMessages: [
-                    "You did it!",
-                    "Keep up the great work!",
-                    "Another day, another win!",
-                    "Day completed!",
-                    "Great job!",
-                    "Progress, not perfection."
-                ],
-                stoicQuotes: [
-                    "The best revenge is to be unlike him who performed the injury. - Marcus Aurelius",
-                    "We suffer more often in imagination than in reality. - Seneca",
-                    "Waste no more time arguing about what a good man should be. Be one. - Marcus Aurelius",
-                    "Hang on to your youthful enthusiasms - you’ll be able to use them better later. - Seneca",
-                    "Do not spoil what you have by desiring what you have not; remember that what you now have was once among the things you only hoped for. - Epicurus",
-                    "If you are distressed by anything external, the pain is not due to the thing itself, but to your estimate of it; and this you have the power to revoke at any time. - Marcus Aurelius",
-                    "Luck is what happens when preparation meets opportunity. - Seneca",
-                    "The mind that is anxious about future events is miserable. - Seneca",
-                    "The soul becomes dyed with the color of its thoughts. - Marcus Aurelius",
-                    "First say to yourself what you would be; and then do what you have to do. - Epictetus",
-                    "It is not that we have a short time to live, but that we waste a lot of it. - Seneca",
-                    "Difficulties strengthen the mind, as labor does the body. - Seneca",
-                    "Never let the future disturb you. You will meet it, if you have to, with the same weapons of reason which today arm you against the present. - Marcus Aurelius",
-                    "The whole future lies in uncertainty: live immediately. - Seneca",
-                    "He who fears death will never do anything worthy of a living man. - Seneca",
-                    "You have power over your mind - not outside events. Realize this, and you will find strength. - Marcus Aurelius",
-                    "The greatest wealth is to live content with little. - Plato",
-                    "It is not what happens to you, but how you react to it that matters. - Epictetus",
-                    "Freedom is the only worthy goal in life. It is won by disregarding things that lie beyond our control. - Epictetus",
-                    "Every difficulty in life is an opportunity to grow. - Epictetus",
-                    "Man is not worried by real problems so much as by his imagined anxieties about real problems. - Epictetus",
-                    "The tranquility that comes when you stop caring what they say. Or think. Or do. Only what you do. - Marcus Aurelius",
-                    "Stop telling yourself the stories that keep you stuck. - Epictetus",
-                    "No person has the power to have everything they desire, but it is in their power not to want what they don't possess, and to cheerfully turn what is given to their advantage. - Seneca",
-                    "External things are not my problems. Only my own judgments are. - Marcus Aurelius",
-                    "You must unlearn what you have learned. - Epictetus",
-                    "If a man knows not to which port he sails, no wind is favorable. - Seneca",
-                    "How long are you going to wait before you demand the best for yourself? - Epictetus",
-                    "The things you think about determine the quality of your mind. Your soul takes on the color of your thoughts. - Marcus Aurelius",
-                    "It is not the man who has too little, but the man who craves more, that is poor. - Seneca"
-                ]
-            };
-
-            let progressData;
-            let overallProgressChart;
-            let isCalendarView = false;
-            let currentDayView = 1;
-            let showAllDays = false;
-
-            // New variable to store the start date of the challenge
-            let challengeStartDate;
-
-            function initializeProgress() {
-                const defaultProgress = Array.from({ length: 30 }, (_, i) => ({
-                    day: i + 1,
-                    tasks: {
-                        strength: false,
-                        cardio: false,
-                        read: false,
-                        journal: false
-                    },
-                    strengthWorkoutOverride: null,
-                    missed: false
-                }));
-
-                const savedProgress = localStorage.getItem('challengeProgress');
-                progressData = savedProgress ? JSON.parse(savedProgress) : defaultProgress;
-
-                // Initialize or retrieve challenge start date
-                const savedStartDate = localStorage.getItem('challengeStartDate');
-                if (!savedStartDate) {
-                    challengeStartDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD format
-                    localStorage.setItem('challengeStartDate', challengeStartDate);
-                } else {
-                    challengeStartDate = savedStartDate;
-                }
-            }
-
-            function saveProgress() {
-                localStorage.setItem('challengeProgress', JSON.stringify(progressData));
-            }
-
-            function updateDashboard() {
-                const daysCompleted = progressData.filter(day => Object.values(day.tasks).every(t => t)).length;
-                const totalWorkouts = progressData.reduce((acc, day, index) => {
-                    if (day.tasks.strength) {
-                        acc++;
-                    }
-                    if (day.tasks.cardio) {
-                        acc++;
-                    }
-                    return acc;
-                }, 0);
-
-                const daysCompletedEl = document.getElementById('days-completed');
-                const workoutsLoggedEl = document.getElementById('workouts-logged');
-                if (daysCompletedEl && workoutsLoggedEl) {
-                    daysCompletedEl.textContent = `${daysCompleted}/30`;
-                    workoutsLoggedEl.textContent = totalWorkouts;
-                }
-
-                updateOverallProgressChart();
-                updateStoicQuote();
-                updateCurrentDate();
-
-                if (isCalendarView) {
-                    renderCalendarView();
-                } else {
-                    renderDayGrid();
-                }
-            }
-
-            function renderDayGrid() {
-                const grid = document.getElementById('days-grid');
-                if (!grid) return;
-                grid.innerHTML = '';
-
-                // Calculate the current challenge day based on the start date
-                const today = new Date();
-                const startDate = new Date(challengeStartDate);
-                const challengeDay = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
-
-                progressData.forEach((dayData, index) => {
-                    const allTasksDone = Object.values(dayData.tasks).every(t => t);
-                    const isPastDay = dayData.day < challengeDay;
-
-                    // New logic to hide completed or missed days
-                    if (!showAllDays && (allTasksDone || dayData.missed)) {
-                        return; // Skip rendering this tile
-                    }
-
-                    const isCurrentDay = dayData.day === challengeDay;
-
-                    const strengthTaskLabel = dayData.strengthWorkoutOverride ? `${dayData.strengthWorkoutOverride} (Modified)` : workoutSchedule[index];
-
-                    const dayCard = document.createElement('div');
-                    dayCard.className = `day-card rounded-2xl shadow-lg p-6 flex flex-col justify-between ${isCurrentDay ? 'current-day-card' : ''} ${dayData.missed ? 'day-card-missed' : ''}`;
-
-                    let tasksHtml = `
-                        <div>
-                            <h4 class="font-bold text-xl text-center mb-3 text-[#364156]" data-day="${index + 1}">Day ${dayData.day}</h4>
-                            <ul class="space-y-2">
-                                <li class="task-item flex items-center gap-2 rounded-lg cursor-pointer ${dayData.tasks.strength ? 'completed' : 'bg-gray-50'}" data-day="${index}" data-task="strength">
-                                    <span class="text-sm font-semibold text-[#364156]">${strengthTaskLabel}</span>
-                                </li>
-                                <li class="task-item flex items-center gap-2 rounded-lg cursor-pointer ${dayData.tasks.cardio ? 'completed' : 'bg-gray-50'}" data-day="${index}" data-task="cardio">
-                                    <span class="text-sm font-semibold text-[#364156]">Cardio or walk</span>
-                                </li>
-                                <li class="task-item flex items-center gap-2 rounded-lg cursor-pointer ${dayData.tasks.read ? 'completed' : 'bg-gray-50'}" data-day="${index}" data-task="read">
-                                    <span class="text-sm font-semibold text-[#364156]">Read or Coursera</span>
-                                </li>
-                                <li class="task-item flex items-center gap-2 rounded-lg cursor-pointer ${dayData.tasks.journal ? 'completed' : 'bg-gray-50'}" data-day="${index}" data-task="journal">
-                                    <span class="text-sm font-semibold text-[#364156]">Journal</span>
-                                </li>
-                            </ul>
-                        </div>
-                    `;
-
-                    // Add "Mark as Missed" button for past, incomplete days
-                    if (isPastDay && !allTasksDone) {
-                       tasksHtml += `
-                           <div class="mt-4 flex justify-center">
-                               <button class="mark-missed-btn bg-gray-400 text-white text-xs font-bold py-2 px-4 rounded-full shadow-md hover:bg-red-500 transition-colors" data-day-index="${index}">Mark as Missed</button>
-                           </div>
-                       `;
-                    }
-                    
-                    // Add "Change Workout" button for the current day
-                    if (isCurrentDay && !allTasksDone) {
-                        tasksHtml += `
-                            <div class="mt-4 flex justify-center">
-                                <button class="change-workout-btn bg-[#F97316] text-white text-xs font-bold py-2 px-4 rounded-full shadow-md hover:bg-orange-600 transition-colors" data-day-index="${index}">Change Workout</button>
-                            </div>
-                        `;
-                    }
-
-                    dayCard.innerHTML = tasksHtml;
-                    grid.appendChild(dayCard);
-                });
-            }
-
-            function renderCalendarView() {
-                const grid = document.getElementById('calendar-grid-days');
-                if (!grid) return;
-                grid.innerHTML = '';
-                const today = new Date();
-                const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).getDay(); // 0 for Sunday
-
-                for (let i = 0; i < firstDayOfMonth; i++) {
-                    grid.innerHTML += `<div class="calendar-day-card"></div>`;
-                }
-
-                progressData.forEach((dayData, index) => {
-                    const allTasksDone = Object.values(dayData.tasks).every(t => t);
-                    const someTasksDone = Object.values(dayData.tasks).some(t => t);
-                    let cardClass = '';
-                    if (allTasksDone) {
-                        cardClass = 'completed-day';
-                    } else if (someTasksDone) {
-                        cardClass = 'some-tasks-day';
-                    }
-                    grid.innerHTML += `
-                        <div class="calendar-day-card ${cardClass}" data-day="${index + 1}">
-                            <span class="text-2xl font-bold">${dayData.day}</span>
-                        </div>
-                    `;
-                });
-            }
-            
-            function openWorkoutModal(dayIndex) {
-                const modal = document.getElementById('workoutModal');
-                const workoutList = document.getElementById('workout-list');
-                if (!modal || !workoutList) return;
-                
-                workoutList.innerHTML = '';
-                
-                let lastWorkoutType = null;
-                if (dayIndex > 0) {
-                    const prevDay = progressData[dayIndex - 1];
-                    lastWorkoutType = prevDay.strengthWorkoutOverride || workoutSchedule[dayIndex - 1];
-                }
-
-                workoutOptions.forEach(option => {
-                    const listItem = document.createElement('li');
-                    const button = document.createElement('button');
-                    button.textContent = option;
-                    button.className = 'w-full text-left p-3 rounded-lg font-semibold transition-colors';
-                    button.dataset.workoutType = option;
-                    
-                    if (option === lastWorkoutType) {
-                        button.disabled = true;
-                        button.className += ' bg-gray-200 text-gray-400 cursor-not-allowed';
-                    } else {
-                        button.className += ' bg-blue-100 text-blue-800 hover:bg-blue-200';
-                    }
-                    
-                    listItem.appendChild(button);
-                    workoutList.appendChild(listItem);
-                });
-                
-                modal.classList.remove('hidden');
-                setTimeout(() => {
-                    modal.classList.remove('opacity-0');
-                    modal.querySelector('.modal-content').classList.remove('scale-95');
-                }, 10);
-            }
-
-            function setupEventListeners() {
-                const daysGrid = document.getElementById('days-grid');
-                const calendarView = document.getElementById('calendar-view');
-                const resetBtn = document.getElementById('reset-btn');
-                const promptBtn = document.getElementById('prompt-btn');
-                const closeModalBtn = document.getElementById('close-modal-btn');
-                const modal = document.getElementById('promptModal');
-                const confettiMessageEl = document.getElementById('confettiMessage');
-                const viewToggleBtn = document.getElementById('view-toggle-btn');
-                const mainGridView = document.getElementById('days-grid');
-                const calendarGridDays = document.getElementById('calendar-grid-days');
-                const workoutModal = document.getElementById('workoutModal');
-                const closeWorkoutModalBtn = document.getElementById('close-workout-modal-btn');
-                const workoutList = document.getElementById('workout-list');
-                const viewPastBtn = document.getElementById('view-past-btn');
-
-                if (viewPastBtn) {
-                    viewPastBtn.addEventListener('click', () => {
-                        showAllDays = !showAllDays;
-                        renderDayGrid();
-                        viewPastBtn.textContent = showAllDays ? 'Hide Past Days' : 'View Past Days';
-                    });
-                }
-
-
-                if(viewToggleBtn) {
-                    viewToggleBtn.addEventListener('click', () => {
-                        isCalendarView = !isCalendarView;
-                        if (isCalendarView) {
-                            mainGridView.classList.add('hidden');
-                            calendarView.classList.remove('hidden');
-                            renderCalendarView();
-                            viewToggleBtn.textContent = 'List View';
-                        } else {
-                            mainGridView.classList.remove('hidden');
-                            calendarView.classList.add('hidden');
-                            renderDayGrid();
-                            viewToggleBtn.textContent = 'Calendar View';
-                        }
-                    });
-                }
-
-                if(calendarGridDays) {
-                    calendarGridDays.addEventListener('click', (e) => {
-                        const target = e.target.closest('.calendar-day-card');
-                        if (target) {
-                            currentDayView = parseInt(target.dataset.day);
-                            mainGridView.classList.remove('hidden');
-                            calendarView.classList.add('hidden');
-                            renderDayGrid();
-                            viewToggleBtn.textContent = 'Calendar View';
-
-                            // Scroll to the specific day's card
-                            const cardToScrollTo = document.querySelector(`.day-card h4.text-xl[data-day='${currentDayView}']`);
-                            if (cardToScrollTo) {
-                                cardToScrollTo.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                            }
-                        }
-                    });
-                }
-
-                if (daysGrid) {
-                    daysGrid.addEventListener('click', (e) => {
-                        const target = e.target.closest('.task-item');
-                        const missedBtn = e.target.closest('.mark-missed-btn');
-                        const changeWorkoutBtn = e.target.closest('.change-workout-btn');
-
-                        if (target) {
-                            const dayIndex = parseInt(target.dataset.day);
-                            const taskType = target.dataset.task;
-
-                            progressData[dayIndex].tasks[taskType] = !progressData[dayIndex].tasks[taskType];
-
-                            if (progressData[dayIndex].tasks[taskType]) {
-                                target.classList.add('glowing-task');
-                                setTimeout(() => {
-                                    target.classList.remove('glowing-task');
-                                }, 2000);
-                            }
-
-                            const allTasksDone = Object.values(progressData[dayIndex].tasks).every(t => t);
-                            if (allTasksDone) {
-                                confetti({
-                                    particleCount: 150,
-                                    spread: 90,
-                                    origin: { y: 0.6 }
-                                });
-                                showConfettiMessage();
-                            }
-
-                            saveProgress();
-                            renderDayGrid();
-                            updateDashboard();
-                        } else if (missedBtn) {
-                            const dayIndex = parseInt(missedBtn.dataset.dayIndex);
-                            progressData[dayIndex].missed = true;
-                            Object.keys(progressData[dayIndex].tasks).forEach(task => progressData[dayIndex].tasks[task] = true);
-                            saveProgress();
-                            renderDayGrid();
-                            updateDashboard();
-                        } else if (changeWorkoutBtn) {
-                             const dayIndex = parseInt(changeWorkoutBtn.dataset.dayIndex);
-                             openWorkoutModal(dayIndex);
-                        }
-                    });
-                }
-                
-                if (workoutList) {
-                    workoutList.addEventListener('click', (e) => {
-                        const button = e.target.closest('button');
-                        if (button && !button.disabled) {
-                            const dayIndex = Array.from(document.querySelectorAll('.change-workout-btn')).find(btn => btn.closest('.day-card.current-day-card')).dataset.dayIndex;
-                            const newWorkoutType = button.dataset.workoutType;
-                            progressData[dayIndex].strengthWorkoutOverride = newWorkoutType;
-                            saveProgress();
-                            closeModal(workoutModal);
-                            renderDayGrid();
-                            updateDashboard();
-                        }
-                    });
-                }
-                
-                if (closeWorkoutModalBtn) {
-                     closeWorkoutModalBtn.addEventListener('click', () => {
-                         closeModal(workoutModal);
-                     });
-                 }
-                
-                if (workoutModal) {
-                    workoutModal.addEventListener('click', (e) => {
-                        if (e.target === workoutModal) {
-                            closeModal(workoutModal);
-                        }
-                    });
-                }
-
-                if (resetBtn) {
-                    resetBtn.addEventListener('click', showConfirmModal);
-                }
-
-                if (promptBtn) {
-                    promptBtn.addEventListener('click', () => {
-                        setupModal(modal, closeModalBtn);
-                    });
-                }
-                 if (closeModalBtn) {
-                     closeModalBtn.addEventListener('click', () => {
-                         closeModal(modal);
-                     });
-                 }
-                 if (modal) {
-                     modal.addEventListener('click', (e) => {
-                         if (e.target === modal) {
-                             closeModal(modal);
-                         }
-                     });
-                 }
-
-                setupConfirmModal();
-            }
-
-            function setupModal(modal, closeBtn) {
-                 const promptText = document.getElementById('prompt-text');
-                 const modalContent = modal ? modal.querySelector('div') : null;
-
-                 const today = new Date();
-                 const startDate = new Date(challengeStartDate);
-                 const challengeDay = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
-                 const promptIndex = Math.min(challengeDay - 1, challengeData.journalPrompts.length - 1);
-                 
-                 if (promptText) {
-                     promptText.textContent = challengeData.journalPrompts[promptIndex];
-                 }
-                 modal.classList.remove('hidden');
-                 setTimeout(() => {
-                     modal.classList.remove('opacity-0');
-                     if (modalContent) modalContent.classList.remove('scale-95');
-                 }, 10);
-            }
-
-            function closeModal(modal) {
-                const modalContent = modal ? modal.querySelector('div') : null;
-                if (modal) {
-                    modal.classList.add('opacity-0');
-                    if (modalContent) modalContent.classList.add('scale-95');
-                    setTimeout(() => modal.classList.add('hidden'), 300);
-                }
-            }
-
-
-            function showConfirmModal() {
-                const modal = document.getElementById('confirmModal');
-                if (modal) {
-                    modal.classList.remove('hidden');
-                    setTimeout(() => {
-                        modal.classList.remove('opacity-0');
-                    }, 10);
-                }
-            }
-
-            function hideConfirmModal() {
-                const modal = document.getElementById('confirmModal');
-                if (modal) {
-                    modal.classList.add('opacity-0');
-                    setTimeout(() => modal.classList.add('hidden'), 300);
-                }
-            }
-
-            function setupConfirmModal() {
-                const confirmBtn = document.getElementById('confirm-reset-btn');
-                const cancelBtn = document.getElementById('cancel-reset-btn');
-
-                if (confirmBtn) {
-                    confirmBtn.addEventListener('click', () => {
-                        localStorage.removeItem('challengeProgress');
-                        localStorage.removeItem('challengeStartDate'); // Reset start date on full reset
-                        initializeProgress();
-                        renderDayGrid();
-                        updateDashboard();
-                        hideConfirmModal();
-                    });
-                }
-
-                if (cancelBtn) {
-                    cancelBtn.addEventListener('click', hideConfirmModal);
-                }
-            }
-
-            function showConfettiMessage() {
-                const messageEl = document.getElementById('confettiMessage');
-                const messages = challengeData.confettiMessages;
-                const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-
-                messageEl.textContent = randomMessage;
-                messageEl.classList.remove('hidden');
-
-                setTimeout(() => {
-                    messageEl.style.opacity = 1;
-                }, 10);
-
-                setTimeout(() => {
-                    messageEl.style.opacity = 0;
-                    setTimeout(() => {
-                        messageEl.classList.add('hidden');
-                    }, 500);
-                }, 2000);
-            }
-
-            function updateOverallProgressChart() {
-                const daysCompleteCount = progressData.filter(day => Object.values(day.tasks).every(t => t)).length;
-                const completionPercentage = (daysCompleteCount / 30) * 100 || 0;
-                const percentageEl = document.getElementById('overall-progress-percentage');
-                if(percentageEl) {
-                    percentageEl.textContent = `${Math.round(completionPercentage)}%`;
-                }
-            }
-
-            function updateStoicQuote() {
-                const quoteEl = document.getElementById('stoic-quote');
-                if (!quoteEl) return;
-                const today = new Date();
-                const startDate = new Date(challengeStartDate);
-                const challengeDay = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
-                const quoteIndex = Math.min(challengeDay - 1, challengeData.stoicQuotes.length - 1);
-                quoteEl.textContent = `"${challengeData.stoicQuotes[quoteIndex]}"`;
-            }
-
-            function updateCurrentDate() {
-                const dateEl = document.getElementById('current-date');
-                if (!dateEl) return;
-                const today = new Date();
-                const formattedDate = today.toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-                dateEl.textContent = formattedDate;
-            }
-
-            function init() {
-                initializeProgress();
-                updateOverallProgressChart();
-                renderDayGrid();
-                updateDashboard();
-                setupEventListeners();
-                updateCurrentDate();
-            }
-
-            init();
-        });
-    </script>
-
+    <div id="startDateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 opacity-0 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full transform transition-transform duration-300 scale-95 modal-content text-center">
+            <h2 class="text-2xl font-bold text-[#364156] mb-4">Select Start Date</h2>
+            <p class="text-gray-600 mb-4">When did you start the challenge? This will allow you to log past days.</p>
+            <input type="date" id="start-date-input" class="w-full p-3 border border-gray-300 rounded-lg mb-6 text-center text-gray-700">
+            <button id="set-start-date-btn" class="bg-[#6366F1] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#4338CA] transition-colors w-full">Set Start Date</button>
+        </div>
+    </div>
 </body>
 </html>
