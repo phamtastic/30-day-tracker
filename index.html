@@ -207,18 +207,29 @@
             }
         }
 
-        // Fix to calculate challenge day using UTC to avoid timezone issues.
+        /**
+         * Calculates the current day of the challenge, ensuring accuracy across time zones.
+         * @returns {number} The current day number.
+         */
         function getChallengeDay() {
             if (!challengeStartDate) return 0;
+
+            // Split the date string to construct the date object in the local time zone,
+            // avoiding UTC parsing issues.
+            const parts = challengeStartDate.split('-');
+            const startDate = new Date(parts[0], parts[1] - 1, parts[2]);
             const today = new Date();
-            const start = new Date(challengeStartDate);
-            
-            // Normalize both dates to UTC midnight to ensure an accurate day difference
-            const utcToday = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
-            const utcStart = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
-            
+
+            // Set both dates to midnight local time to avoid time-of-day offsets.
+            startDate.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
+
             const oneDay = 1000 * 60 * 60 * 24;
-            return Math.floor((utcToday - utcStart) / oneDay) + 1;
+            const diffInMilliseconds = today.getTime() - startDate.getTime();
+
+            // Use Math.round to account for potential DST changes that can make the difference
+            // slightly more or less than a full day.
+            return Math.round(diffInMilliseconds / oneDay) + 1;
         }
 
         function renderDayGrid() {
