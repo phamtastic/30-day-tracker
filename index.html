@@ -136,8 +136,14 @@
         function showStartDateModal() {
             const modal = document.getElementById('startDateModal');
             if (!modal) return;
-            const today = new Date().toISOString().slice(0, 10);
-            document.getElementById('start-date-input').max = today;
+            // Get the local date and format it correctly
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const formattedDate = `${year}-${month}-${day}`;
+            
+            document.getElementById('start-date-input').max = formattedDate;
             modal.classList.remove('hidden');
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
@@ -206,13 +212,12 @@
             if (!grid) return;
             grid.innerHTML = '';
             
-            // Fix for time zone bug in date calculation
+            // Fixed date calculation using local time zone
             const today = new Date();
-            const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
-            const startDate = new Date(challengeStartDate);
-            const startDateUTC = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()));
-            const diffTime = todayUTC.getTime() - startDateUTC.getTime();
-            const challengeDay = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            today.setHours(0, 0, 0, 0);
+            const start = new Date(challengeStartDate);
+            start.setHours(0, 0, 0, 0);
+            const challengeDay = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
             progressData.forEach((dayData, index) => {
                 const allTasksDone = Object.values(dayData.tasks).every(t => t);
@@ -248,7 +253,7 @@
                         </ul>
                     </div>
                 `;
-                if (!allTasksDone && !dayData.missed && (isCurrentDay || showAllDays)) {
+                if (!allTasksDone && !dayData.missed && (isPastDay || isCurrentDay || showAllDays)) {
                    tasksHtml += `<div class="mt-4 flex flex-col justify-center items-center"><button class="change-workout-btn bg-[#F97316] text-white text-xs font-bold py-2 px-4 rounded-full shadow-md hover:bg-orange-600 transition-colors" data-day-index="${index}">Change Workout</button></div>`;
                 }
                 if (isPastDay && !allTasksDone && !dayData.missed) {
@@ -285,8 +290,16 @@
             currentDayIndexToChange = dayIndex;
             const modal = document.getElementById('workoutModal');
             const workoutList = document.getElementById('workout-list');
-            if (!modal || !workoutList) return;
+            const modalTitle = document.querySelector('#workoutModal h2');
+            if (!modal || !workoutList || !modalTitle) return;
             workoutList.innerHTML = '';
+            
+            const isRestDay = workoutSchedule[dayIndex] === 'Rest Day: Stretching or Yoga';
+            if(isRestDay) {
+                modalTitle.textContent = "Select Workout (Rest Day Override)";
+            } else {
+                modalTitle.textContent = "Select Workout";
+            }
             
             let lastWorkoutType = null;
             if (dayIndex > 0) {
@@ -294,8 +307,13 @@
                 lastWorkoutType = prevDay.strengthWorkoutOverride || workoutSchedule[dayIndex - 1];
             }
 
-            // Filter out the last workout type from the options
-            const availableOptions = workoutOptions.filter(option => option !== lastWorkoutType);
+            const availableOptions = workoutOptions.filter(option => {
+                // Allow user to select a rest day even if the previous day was a rest day
+                if (option.includes('Rest Day')) {
+                    return true;
+                }
+                return option !== lastWorkoutType;
+            });
             
             if (availableOptions.length === 0) {
                 workoutList.innerHTML = '<li class="text-center text-gray-500 italic">No alternative workouts available.</li>';
@@ -466,13 +484,12 @@
              const promptText = document.getElementById('prompt-text');
              const modalContent = modal ? modal.querySelector('div') : null;
              
-             // Fix for time zone bug
-             const today = new Date();
-             const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
-             const startDate = new Date(challengeStartDate);
-             const startDateUTC = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()));
-             const diffTime = todayUTC.getTime() - startDateUTC.getTime();
-             const challengeDay = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            // Fixed date calculation using local time zone
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const start = new Date(challengeStartDate);
+            start.setHours(0, 0, 0, 0);
+            const challengeDay = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
              
              const promptIndex = Math.min(challengeDay - 1, baseChallengeData.journalPrompts.length - 1);
              if (promptText) {
@@ -551,13 +568,12 @@
             const quoteEl = document.getElementById('stoic-quote');
             if (!quoteEl) return;
             
-            // Fix for time zone bug
+            // Fixed date calculation using local time zone
             const today = new Date();
-            const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
-            const startDate = new Date(challengeStartDate);
-            const startDateUTC = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()));
-            const diffTime = todayUTC.getTime() - startDateUTC.getTime();
-            const challengeDay = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            today.setHours(0, 0, 0, 0);
+            const start = new Date(challengeStartDate);
+            start.setHours(0, 0, 0, 0);
+            const challengeDay = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
             
             const quoteIndex = Math.min(challengeDay - 1, baseChallengeData.stoicQuotes.length - 1);
             quoteEl.textContent = `"${baseChallengeData.stoicQuotes[quoteIndex]}"`;
