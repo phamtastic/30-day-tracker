@@ -207,17 +207,26 @@
             }
         }
 
+        // Fix to calculate challenge day using UTC to avoid timezone issues.
+        function getChallengeDay() {
+            if (!challengeStartDate) return 0;
+            const today = new Date();
+            const start = new Date(challengeStartDate);
+            
+            // Normalize both dates to UTC midnight to ensure an accurate day difference
+            const utcToday = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+            const utcStart = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+            
+            const oneDay = 1000 * 60 * 60 * 24;
+            return Math.floor((utcToday - utcStart) / oneDay) + 1;
+        }
+
         function renderDayGrid() {
             const grid = document.getElementById('days-grid');
             if (!grid) return;
             grid.innerHTML = '';
             
-            // Fixed date calculation using local time zone
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const start = new Date(challengeStartDate);
-            start.setHours(0, 0, 0, 0);
-            const challengeDay = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+            const challengeDay = getChallengeDay();
 
             progressData.forEach((dayData, index) => {
                 const allTasksDone = Object.values(dayData.tasks).every(t => t);
@@ -254,10 +263,10 @@
                     </div>
                 `;
                 if (!allTasksDone && !dayData.missed && (isPastDay || isCurrentDay || showAllDays)) {
-                   tasksHtml += `<div class="mt-4 flex flex-col justify-center items-center"><button class="change-workout-btn bg-[#F97316] text-white text-xs font-bold py-2 px-4 rounded-full shadow-md hover:bg-orange-600 transition-colors" data-day-index="${index}">Change Workout</button></div>`;
+                    tasksHtml += `<div class="mt-4 flex flex-col justify-center items-center"><button class="change-workout-btn bg-[#F97316] text-white text-xs font-bold py-2 px-4 rounded-full shadow-md hover:bg-orange-600 transition-colors" data-day-index="${index}">Change Workout</button></div>`;
                 }
                 if (isPastDay && !allTasksDone && !dayData.missed) {
-                   tasksHtml += `<div class="mt-4 flex justify-center"><button class="mark-missed-btn bg-gray-400 text-white text-xs font-bold py-2 px-4 rounded-full shadow-md hover:bg-red-500 transition-colors" data-day-index="${index}">Mark as Missed</button></div>`;
+                    tasksHtml += `<div class="mt-4 flex justify-center"><button class="mark-missed-btn bg-gray-400 text-white text-xs font-bold py-2 px-4 rounded-full shadow-md hover:bg-red-500 transition-colors" data-day-index="${index}">Mark as Missed</button></div>`;
                 }
                 dayCard.innerHTML = tasksHtml;
                 grid.appendChild(dayCard);
@@ -428,8 +437,8 @@
                         renderDayGrid();
                         updateDashboard();
                     } else if (changeWorkoutBtn) {
-                         const dayIndex = parseInt(changeWorkoutBtn.dataset.dayIndex);
-                         openWorkoutModal(dayIndex);
+                            const dayIndex = parseInt(changeWorkoutBtn.dataset.dayIndex);
+                            openWorkoutModal(dayIndex);
                     }
                 });
             }
@@ -450,7 +459,7 @@
             
             if (closeWorkoutModalBtn) {
                  closeWorkoutModalBtn.addEventListener('click', () => closeModal(workoutModal));
-             }
+            }
             
             if (workoutModal) {
                 workoutModal.addEventListener('click', (e) => {
@@ -481,25 +490,20 @@
         }
 
         function setupModal(modal) {
-             const promptText = document.getElementById('prompt-text');
-             const modalContent = modal ? modal.querySelector('div') : null;
-             
-            // Fixed date calculation using local time zone
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const start = new Date(challengeStartDate);
-            start.setHours(0, 0, 0, 0);
-            const challengeDay = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-             
-             const promptIndex = Math.min(challengeDay - 1, baseChallengeData.journalPrompts.length - 1);
-             if (promptText) {
-                 promptText.textContent = baseChallengeData.journalPrompts[promptIndex];
-             }
-             modal.classList.remove('hidden');
-             setTimeout(() => {
-                 modal.classList.remove('opacity-0');
-                 if (modalContent) modalContent.classList.remove('scale-95');
-             }, 10);
+              const promptText = document.getElementById('prompt-text');
+              const modalContent = modal ? modal.querySelector('div') : null;
+              
+              const challengeDay = getChallengeDay();
+              
+              const promptIndex = Math.min(challengeDay - 1, baseChallengeData.journalPrompts.length - 1);
+              if (promptText) {
+                  promptText.textContent = baseChallengeData.journalPrompts[promptIndex];
+              }
+              modal.classList.remove('hidden');
+              setTimeout(() => {
+                  modal.classList.remove('opacity-0');
+                  if (modalContent) modalContent.classList.remove('scale-95');
+              }, 10);
         }
 
         function closeModal(modal) {
@@ -568,12 +572,7 @@
             const quoteEl = document.getElementById('stoic-quote');
             if (!quoteEl) return;
             
-            // Fixed date calculation using local time zone
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const start = new Date(challengeStartDate);
-            start.setHours(0, 0, 0, 0);
-            const challengeDay = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+            const challengeDay = getChallengeDay();
             
             const quoteIndex = Math.min(challengeDay - 1, baseChallengeData.stoicQuotes.length - 1);
             quoteEl.textContent = `"${baseChallengeData.stoicQuotes[quoteIndex]}"`;
@@ -750,9 +749,9 @@
             </section>
 
             <section id="journaling" class="text-center mb-12">
-                   <button id="prompt-btn" class="bg-[#6366F1] text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-[#4338CA] transition-colors">
-                     Get Today's Journal Prompt
-                 </button>
+                    <button id="prompt-btn" class="bg-[#6366F1] text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-[#4338CA] transition-colors">
+                        Get Today's Journal Prompt
+                    </button>
             </section>
 
             <section id="daily-tracker" class="bg-white p-6 rounded-2xl shadow-lg mb-12">
